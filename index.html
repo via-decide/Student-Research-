@@ -418,7 +418,7 @@
     }
 
     /* =========================================
-       UX PHYSICS ENGINE
+       UX PHYSICS ENGINE (DELEGATED EVENTS)
        ========================================= */
     let touchStartX = 0, touchStartY = 0;
 
@@ -526,7 +526,7 @@
             scores.push({name, score, price: item.price});
         }
         scores.sort((a, b) => b.score - a.score);
-        return scores[0]; 
+        return scores[0]; // Return Winner
     }
 
     function updateFinal() {
@@ -540,14 +540,17 @@
                 <div style="font-size:1.5rem; font-weight:800; margin:10px 0">${winner.name}</div>
                 <p style="color:#aaa">Est. Price: ₹${winner.price}</p>
             </div>`;
+            // Clear raw selection, keep winner for routing
             ENGINE_STATE.items_detected = {};
             ENGINE_STATE.items_detected[winner.name] = {qty:1};
         } else {
+            // Research mode or empty
             let html = "";
             for(let k in ENGINE_STATE.items_detected) html+=`<div class="input-row"><span class="input-key">${k}</span><span class="input-val">READY</span></div>`;
             list.innerHTML = html || "Nothing Selected";
         }
 
+        // Button Visibility Logic
         const mode = resolvePlatform();
         document.getElementById('btn-amazon').style.display = mode === 'amazon' ? 'block' : 'none';
         document.getElementById('btn-blinkit').style.display = mode === 'blinkit' ? 'block' : 'none';

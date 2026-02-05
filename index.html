@@ -143,10 +143,10 @@
 
 <script>
     /* =========================================
-       KUTCH AUTOMATION | UNIVERSAL OS v44.0
+       KUTCH AUTOMATION | UNIVERSAL OS v45.0 (DEEP LINK FIXED)
        ========================================= */
     
-    // 🧠 1. MULTI-SOURCE NEURAL ENGINE
+    // 🧠 1. CONTEXT EXTRACTOR (WIKIPEDIA API)
     const WIKI_ENGINE = {
         source: "wiki", 
         endpoints: {
@@ -190,13 +190,10 @@
       "Realme Note 60": { attr: { camera: 5.0, gaming: 4.0, battery: 8.0, ui: 6.0 }, price: 7999 }
     };
 
-    // 🟢 STUDENT / DINING DATABASE (Merged)
     const FOOD_DATABASE = {
-        // Meals (Zomato)
         "Paneer Butter Masala": { attr: { comfort: 9.5, heaviness: 9.0, speed: 4.0, health: 3.0 }, price: 240 },
         "Dal Makhani": { attr: { comfort: 9.8, heaviness: 9.5, speed: 3.0, health: 4.0 }, price: 220 },
         "Hakka Noodles": { attr: { comfort: 7.5, heaviness: 6.0, speed: 9.0, health: 3.0 }, price: 200 },
-        // Essentials & Snacks (Blinkit)
         "Lays Classic": { attr: { comfort: 8.0, heaviness: 2.0, speed: 10.0, health: 1.0 }, price: 20 },
         "Maggi Noodles": { attr: { comfort: 9.0, heaviness: 5.0, speed: 9.5, health: 2.0 }, price: 14 },
         "Amul Milk": { attr: { comfort: 5.0, heaviness: 3.0, speed: 10.0, health: 9.0 }, price: 30 },
@@ -205,26 +202,26 @@
         "Ball Pen Set": { attr: { comfort: 1.0, heaviness: 0.0, speed: 10.0, health: 10.0 }, price: 20 }
     };
 
-    // 🧠 3. VECTORS (Updated with Student Logic)
+    // 🧠 3. VECTORS
     const CATEGORY_VECTORS = {
         "camera": { camera: 0.4 }, "gaming": { gaming: 0.4 },
         "comfort_food": { comfort: 0.45, heaviness: 0.20, speed: 0.10 },
-        "study_fuel": { speed: 0.5, comfort: 0.4, health: -0.1 },  // Blinkit Cravings
-        "mid_week": { speed: 0.6, health: 0.2, heaviness: -0.2 }, // Essentials
-        "bistro": { speed: 0.5, comfort: 0.2 } // Quick Meals
+        "study_fuel": { speed: 0.5, comfort: 0.4, health: -0.1 },  
+        "mid_week": { speed: 0.6, health: 0.2, heaviness: -0.2 }, 
+        "bistro": { speed: 0.5, comfort: 0.2 } 
     };
 
     // 💰 DEEP LINK SYSTEM
     const AMZN_TAG = "decideos-21";
     
-    function buildAmazonLink(q) {
-        return `https://www.amazon.in/s?k=${encodeURIComponent(q)}&tag=${AMZN_TAG}`;
-    }
-
     const DEEP_LINKS = {
         zomato: { app: q => `intent://search?q=${q}#Intent;scheme=zomato;package=com.application.zomato;end`, web: q => `https://www.zomato.com/search?q=${q}` },
         blinkit: { app: q => `blinkit://`, web: q => `https://blinkit.com/s/?q=${encodeURIComponent(q)}` },
-        amazon: { app: q => `intent://www.amazon.in/s?k=${q}&tag=${AMZN_TAG}#Intent;scheme=https;package=in.amazon.mShop.android.shopping;end`, web: q => buildAmazonLink(q) }
+        // Amazon Intent must be raw URI before injection to avoid double encoding issues in intent struct
+        amazon: { 
+            app: q => `intent://www.amazon.in/s?k=${q}&tag=${AMZN_TAG}#Intent;scheme=https;package=in.amazon.mShop.android.shopping;end`, 
+            web: q => `https://www.amazon.in/s?k=${q}&tag=${AMZN_TAG}` 
+        }
     };
 
     const FALLBACK_MENU = {
@@ -241,23 +238,20 @@
       "research": { label: "WIKIPEDIA RESEARCH", categories: [] } 
     };
 
-    let ENGINE_STATE = { cuisines_detected: [], items_detected: {}, session_weights: {} };
+    let ENGINE_STATE = { cuisines_detected: [], items_detected: {}, session_weights: {}, active_filters: [] };
     let RAW_DATA = FALLBACK_MENU;
     let slideElements = [];
     let currentIdx = 0;
 
     async function boot() { renderLobby(); initVoice(); initSwipeSystem(); }
 
-    /* =========================================
-       UI LOGIC
-       ========================================= */
     function renderLobby() {
         const container = document.getElementById('master-container');
         container.innerHTML = "";
         const section = document.createElement('section');
         section.className = "main-slide active";
         
-        let html = `<div class="slide-header"><span class="header-title">DECIDE OS v44.0</span></div>
+        let html = `<div class="slide-header"><span class="header-title">DECIDE OS v45.0</span></div>
                     <div class="lobby-container"><h1 style="text-align:center">SELECT DOMAIN</h1><div style="display:grid; gap:15px;">`;
         
         for(let key in RAW_DATA) {
@@ -282,10 +276,55 @@
         if(ENGINE_STATE.cuisines_detected.length === 0) return showToast("SELECT DOMAIN");
         const domain = ENGINE_STATE.cuisines_detected[0];
         if(domain === "research") renderSearchSlide();
-        else buildDeck(domain);
+        else { ENGINE_STATE.active_filters = []; renderSubLobby(domain); }
     }
 
-    /* 🟢 RESEARCH BRANCH (MULTI-SOURCE) */
+    function renderSubLobby(domain) {
+        const container = document.getElementById('master-container');
+        while(container.children.length > 1) container.removeChild(container.lastChild);
+        slideElements = [slideElements[0]];
+
+        const section = document.createElement('section');
+        section.className = "main-slide next"; 
+        
+        const title = domain === 'food' ? "AAJ KYA MANGVAAYEGE!" : "SELECT PRIORITY";
+        const categories = RAW_DATA[domain].categories;
+
+        let html = `<div class="slide-header"><span class="header-title">FILTER</span></div>
+                    <div class="lobby-container">
+                    <h1 style="text-align:center; text-transform:uppercase;">${title}</h1>
+                    <div style="display:grid; gap:15px;">`;
+
+        categories.forEach((cat, idx) => {
+            html += `<button class="cuisine-btn" id="filter-btn-${idx}" onclick="toggleFilter('${cat.label}', ${idx})">${cat.label}</button>`;
+        });
+
+        html += `</div><button class="btn btn-auto btn-full" style="margin-top:30px" onclick="startHunt()">HUNT &rarr;</button></div>`;
+        
+        section.innerHTML = html;
+        container.appendChild(section);
+        slideElements.push(section); 
+        goToSlide(1); 
+    }
+
+    function toggleFilter(label, idx) {
+        const btn = document.getElementById(`filter-btn-${idx}`);
+        if(ENGINE_STATE.active_filters.includes(label)) {
+            ENGINE_STATE.active_filters = ENGINE_STATE.active_filters.filter(x => x !== label);
+            btn.classList.remove('selected');
+        } else {
+            ENGINE_STATE.active_filters.push(label);
+            btn.classList.add('selected');
+        }
+    }
+
+    function startHunt() { 
+        if(ENGINE_STATE.active_filters.length === 0) return showToast("SELECT AT LEAST ONE");
+        ENGINE_STATE.session_weights = { camera:0.1, gaming:0.1, battery:0.1, ui:0.1, anc:0.1, sound:0.1, mic:0.1, latency:0.1, comfort:0.1, health:0.1, spice:0.1, speed:0.1, protein:0.1, heaviness:0.1, shareability:0.1 };
+        buildDeck(); 
+    }
+
+    /* 🟢 RESEARCH BRANCH */
     function renderSearchSlide() {
         const container = document.getElementById('master-container');
         while(container.children.length > 1) container.removeChild(container.lastChild);
@@ -293,7 +332,6 @@
 
         const section = document.createElement('section');
         section.className = "main-slide next";
-        
         section.innerHTML = `<div class="slide-header"><span class="header-title">CONTEXT ENGINE</span></div>
                     <div class="lobby-container">
                         <div class="source-toggle">
@@ -320,7 +358,7 @@
     async function executeSearch() {
         const query = document.getElementById('search-input').value;
         if(!query) return showToast("ENTER TOPIC");
-        showToast(`SEARCHING ${WIKI_ENGINE.source.toUpperCase()}...`);
+        showToast("EXTRACTING...");
         const title = await WIKI_ENGINE.search(query);
         if(!title) return showToast("NOT FOUND");
         const context = await WIKI_ENGINE.getContext(title);
@@ -332,10 +370,9 @@
         while(container.children.length > 2) container.removeChild(container.lastChild);
         slideElements = slideElements.slice(0, 2);
 
-        // 1. Summary
         const sumSlide = document.createElement('section');
         sumSlide.className = "main-slide next";
-        sumSlide.dataset.mode = "research"; // Enable Swipe Up here too
+        sumSlide.dataset.mode = "research"; 
         sumSlide.innerHTML = `<div class="slide-header"><span class="header-title">SUMMARY</span></div>
             <div class="carousel-viewport"><div class="sub-slide static">
                 <div class="role-label">${WIKI_ENGINE.source === 'travel' ? 'DESTINATION' : 'TOPIC'}</div>
@@ -346,14 +383,13 @@
         container.appendChild(sumSlide);
         slideElements.push(sumSlide);
 
-        // 2. Links
         const linkSlide = document.createElement('section');
         linkSlide.className = "main-slide next";
         linkSlide.dataset.mode = "research"; 
-        let html = `<div class="slide-header"><span class="header-title">RELATED NODES</span></div><div class="carousel-viewport">`;
+        let html = `<div class="slide-header"><span class="header-title">SUB-NODES</span></div><div class="carousel-viewport">`;
         context.links.forEach((link, i) => {
              html += `<div class="sub-slide ${i===0?'opt-active':'opt-hidden'}" data-val="${link.name}">
-                        <div class="role-label">SUB-NODE</div><h1>${link.name}</h1>
+                        <div class="role-label">RELATED NODE</div><h1>${link.name}</h1>
                         <div class="primary-question">Swipe Down to Extract</div>
                         <div class="nav-hint"><span>&larr; NEXT</span><span style="color:var(--accent-go)">EXTRACT &darr;</span></div>
                      </div>`;
@@ -362,19 +398,23 @@
         linkSlide.innerHTML = html;
         container.appendChild(linkSlide);
         slideElements.push(linkSlide);
-        
         goToSlide(2);
     }
 
     /* 🔴 STANDARD BRANCH */
-    function buildDeck(domain) {
+    function buildDeck() {
         const container = document.getElementById('master-container');
-        while(container.children.length > 1) container.removeChild(container.lastChild);
-        slideElements = [slideElements[0]];
+        while(container.children.length > 2) container.removeChild(container.lastChild);
+        slideElements = slideElements.slice(0, 2); // Keep Lobby & Sub-Lobby
 
-        const cats = RAW_DATA[domain].categories;
+        const domain = ENGINE_STATE.cuisines_detected[0];
+        const allCats = RAW_DATA[domain].categories;
+        const targetCats = allCats.filter(c => ENGINE_STATE.active_filters.includes(c.label));
+
         let slides = [];
-        cats.forEach(c => slides.push({ type: 'opt', title: c.label, items: c.items, catType: c.type }));
+        targetCats.forEach(cat => {
+            slides.push({ type: 'opt', title: cat.label, items: cat.items, catType: cat.type });
+        });
         slides.push({ type: 'final' });
 
         slides.forEach((s, idx) => {
@@ -406,10 +446,10 @@
             slideElements.push(el);
         });
         
-        goToSlide(1); 
+        goToSlide(2); 
     }
 
-    /* 🧠 PLATFORM RESOLVER (Student Edition) */
+    /* 🧠 PLATFORM RESOLVER */
     function resolvePlatform() {
         const text = Object.keys(ENGINE_STATE.items_detected).join(" ").toLowerCase();
         if (text.match(/iphone|samsung|phone|vivo|poco|iqoo|charger|buds|realme|xiaomi/)) return "amazon";
@@ -418,7 +458,7 @@
     }
 
     /* =========================================
-       UX PHYSICS ENGINE (DELEGATED EVENTS)
+       UX PHYSICS ENGINE
        ========================================= */
     let touchStartX = 0, touchStartY = 0;
 
@@ -436,9 +476,9 @@
             const view = e.target.closest('.carousel-viewport');
             if(!view) return;
             const dy = e.touches[0].clientY - touchStartY;
-            if(Math.abs(dy) > Math.abs(e.touches[0].clientX - touchStartX)) {
+            if(dy > 0 && Math.abs(dy) > Math.abs(e.touches[0].clientX - touchStartX)) {
                 if (e.cancelable) e.preventDefault(); 
-                document.getElementById('depth-fill').style.height = Math.min((Math.abs(dy)/150)*100, 100) + '%';
+                document.getElementById('depth-fill').style.height = Math.min((dy/150)*100, 100) + '%';
             }
         }, {passive: false});
 
@@ -454,8 +494,8 @@
             const mode = mainSlide.dataset.mode;
             const catType = mainSlide.dataset.catType;
 
-            // 🟢 SWIPE DOWN (Select / Drill Down)
-            if(dy > 80) { 
+            // 🟢 SWIPE DOWN
+            if(Math.abs(dy) > 80 && dy > 0) { 
                 const activeSub = view.querySelector('.sub-slide.opt-active') || view.querySelector('.sub-slide.static');
                 if(!activeSub) return;
                 
@@ -473,19 +513,19 @@
                     showToast("SELECTED");
                     goToSlide(currentIdx + 1);
                 } else {
-                    goToSlide(currentIdx + 1); // Pass static slides
+                    goToSlide(currentIdx + 1);
                 }
             } 
-            // 🔴 SWIPE UP (Back / Research Reset)
+            // 🔴 SWIPE UP
             else if (dy < -80) {
                 if(mode === "research") {
-                    showToast("GOING BACK");
+                    showToast("BACK");
                     goToSlide(currentIdx - 1);
                 } else {
-                    goToSlide(currentIdx - 1);
+                    // Logic to go back in standard mode can be added here
                 }
             }
-            // 🟡 SWIPE SIDE (Navigate Options)
+            // 🟡 SWIPE SIDE
             else if(Math.abs(dx) > 60) { 
                 const slides = Array.from(view.querySelectorAll('.sub-slide'));
                 if(slides.length <= 1) return;
@@ -501,7 +541,7 @@
     }
 
     function goToSlide(idx) {
-        if(idx < 0) return; // Prevent overscroll
+        if(idx < 0) return;
         slideElements[currentIdx].classList.replace('active', idx>currentIdx?'prev':'next');
         currentIdx = idx;
         slideElements[currentIdx].className = "main-slide active";
@@ -526,7 +566,7 @@
             scores.push({name, score, price: item.price});
         }
         scores.sort((a, b) => b.score - a.score);
-        return scores[0]; // Return Winner
+        return scores[0]; 
     }
 
     function updateFinal() {
@@ -540,17 +580,14 @@
                 <div style="font-size:1.5rem; font-weight:800; margin:10px 0">${winner.name}</div>
                 <p style="color:#aaa">Est. Price: ₹${winner.price}</p>
             </div>`;
-            // Clear raw selection, keep winner for routing
             ENGINE_STATE.items_detected = {};
             ENGINE_STATE.items_detected[winner.name] = {qty:1};
         } else {
-            // Research mode or empty
             let html = "";
             for(let k in ENGINE_STATE.items_detected) html+=`<div class="input-row"><span class="input-key">${k}</span><span class="input-val">READY</span></div>`;
             list.innerHTML = html || "Nothing Selected";
         }
 
-        // Button Visibility Logic
         const mode = resolvePlatform();
         document.getElementById('btn-amazon').style.display = mode === 'amazon' ? 'block' : 'none';
         document.getElementById('btn-blinkit').style.display = mode === 'blinkit' ? 'block' : 'none';
@@ -559,15 +596,20 @@
 
     function redirect(type) {
         const item = Object.keys(ENGINE_STATE.items_detected)[0];
-        if(!item) return;
+        if(!item) return showToast("NOTHING SELECTED");
         
         const autoMode = resolvePlatform();
         const mode = type === 'auto' ? autoMode : type;
-        const target = mode === 'amazon' ? ECOM_DEEP_LINKS.amazon : DEEP_LINKS[mode];
+        const target = DEEP_LINKS[mode];
         
-        if(mode === 'amazon') window.location.href = target.web(item);
-        else if (mode === 'blinkit') window.location.href = target.web(item);
-        else window.location.href = target.web(item);
+        const q = encodeURIComponent(item);
+        showToast(`OPENING ${mode.toUpperCase()}...`);
+
+        const start = Date.now();
+        window.location.href = target.app(q);
+        setTimeout(() => {
+            if (Date.now() - start < 2500) window.location.href = target.web(q);
+        }, 2000);
     }
 
     function sendWa() {

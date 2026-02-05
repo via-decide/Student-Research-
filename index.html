@@ -26,6 +26,8 @@
             --text-main: #f0f0f0;
             --accent-go: #00e676; 
             --accent-skip: #ff3333;
+            --accent-zomato: #cb202d;
+            --accent-swiggy: #fc8019;
             --accent-blinkit: #f8cb46;
             --font-tech: 'Courier New', monospace;
             --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -143,7 +145,7 @@
 
 <script>
     /* =========================================
-       KUTCH AUTOMATION | UNIVERSAL OS v45.0 (DEEP LINK FIXED)
+       KUTCH AUTOMATION | UNIVERSAL OS v46.0
        ========================================= */
     
     // 🧠 1. CONTEXT EXTRACTOR (WIKIPEDIA API)
@@ -217,7 +219,6 @@
     const DEEP_LINKS = {
         zomato: { app: q => `intent://search?q=${q}#Intent;scheme=zomato;package=com.application.zomato;end`, web: q => `https://www.zomato.com/search?q=${q}` },
         blinkit: { app: q => `blinkit://`, web: q => `https://blinkit.com/s/?q=${encodeURIComponent(q)}` },
-        // Amazon Intent must be raw URI before injection to avoid double encoding issues in intent struct
         amazon: { 
             app: q => `intent://www.amazon.in/s?k=${q}&tag=${AMZN_TAG}#Intent;scheme=https;package=in.amazon.mShop.android.shopping;end`, 
             web: q => `https://www.amazon.in/s?k=${q}&tag=${AMZN_TAG}` 
@@ -245,13 +246,16 @@
 
     async function boot() { renderLobby(); initVoice(); initSwipeSystem(); }
 
+    /* =========================================
+       UI LOGIC
+       ========================================= */
     function renderLobby() {
         const container = document.getElementById('master-container');
         container.innerHTML = "";
         const section = document.createElement('section');
         section.className = "main-slide active";
         
-        let html = `<div class="slide-header"><span class="header-title">DECIDE OS v45.0</span></div>
+        let html = `<div class="slide-header"><span class="header-title">DECIDE OS v46.0</span></div>
                     <div class="lobby-container"><h1 style="text-align:center">SELECT DOMAIN</h1><div style="display:grid; gap:15px;">`;
         
         for(let key in RAW_DATA) {
@@ -405,7 +409,7 @@
     function buildDeck() {
         const container = document.getElementById('master-container');
         while(container.children.length > 2) container.removeChild(container.lastChild);
-        slideElements = slideElements.slice(0, 2); // Keep Lobby & Sub-Lobby
+        slideElements = slideElements.slice(0, 2); 
 
         const domain = ENGINE_STATE.cuisines_detected[0];
         const allCats = RAW_DATA[domain].categories;
@@ -458,7 +462,7 @@
     }
 
     /* =========================================
-       UX PHYSICS ENGINE
+       UX PHYSICS ENGINE (DELEGATED EVENTS)
        ========================================= */
     let touchStartX = 0, touchStartY = 0;
 
@@ -522,7 +526,7 @@
                     showToast("BACK");
                     goToSlide(currentIdx - 1);
                 } else {
-                    // Logic to go back in standard mode can be added here
+                    goToSlide(currentIdx - 1);
                 }
             }
             // 🟡 SWIPE SIDE
@@ -594,16 +598,38 @@
         document.getElementById('btn-zomato').style.display = mode === 'zomato' ? 'block' : 'none';
     }
 
+    // 🟢 BULLETPROOF CLIPBOARD FIX
+    function forceCopy(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).catch(err => fallbackCopy(text));
+        } else {
+            fallbackCopy(text);
+        }
+    }
+
+    function fallbackCopy(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed"; 
+        textArea.style.left = "-9999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try { document.execCommand('copy'); } catch (err) {}
+        document.body.removeChild(textArea);
+    }
+
     function redirect(type) {
         const item = Object.keys(ENGINE_STATE.items_detected)[0];
         if(!item) return showToast("NOTHING SELECTED");
         
+        forceCopy(item); // 👈 USING THE FIX
+        showToast("LINK COPIED");
+
         const autoMode = resolvePlatform();
         const mode = type === 'auto' ? autoMode : type;
         const target = DEEP_LINKS[mode];
-        
         const q = encodeURIComponent(item);
-        showToast(`OPENING ${mode.toUpperCase()}...`);
 
         const start = Date.now();
         window.location.href = target.app(q);

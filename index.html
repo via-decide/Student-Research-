@@ -138,6 +138,7 @@
         .btn-blinkit { background: var(--accent-blinkit); color: #000; border: none; }
         .btn-wa { background: #25D366; color: #000; border: none; }
         .btn-pdf { background: #d32f2f; border: none; color: #fff; }
+        .btn-yt { background: #ff0000; border: none; }
         
         .lobby-container { display: flex; flex-direction: column; gap: 15px; padding: 30px; height: 100%; justify-content: center; }
         .cuisine-btn { background: #222; border: 1px solid #444; color: #888; padding: 20px; font-size: 1.1rem; font-weight: bold; text-transform: uppercase; border-radius: 12px; transition: all 0.2s; }
@@ -216,6 +217,10 @@
             grid-template-columns: 1fr 1fr;
             gap: 10px;
             margin-bottom: 15px;
+        }
+
+        .action-buttons .btn-yt {
+            grid-column: span 2;
         }
 
         #depth-fill { position: fixed; right: 0; top: 0; bottom: 0; width: 4px; background: #333; z-index: 900; height: 0%; transition: height 0.05s linear; }
@@ -373,6 +378,11 @@
         return `https://www.amazon.in/s?k=${query}&tag=${AMZN_TAG}&linkCode=ll2`;
     }
 
+    function openYouTubeSearch(topic) {
+        const q = encodeURIComponent(topic + " explained");
+        window.open(`https://www.youtube.com/results?search_query=${q}`, '_blank');
+    }
+
     // 🧠 TRUTH DATABASES
     const PHONE_DATABASE = {
       "Poco F7": { attr: { camera: 6.0, gaming: 9.5, battery: 8.0, ui: 4.0 }, price: 29999 },
@@ -440,7 +450,7 @@
     async function boot() { renderLobby(); initVoice(); initSwipeSystem(); }
 
     /* =========================================
-       PDF GENERATION ENGINE
+       PDF GENERATION ENGINE - ENHANCED HUMAN-READABLE FORMAT
        ========================================= */
     async function generateResearchPDF() {
         if (ENGINE_STATE.research_nodes.length === 0) {
@@ -457,12 +467,13 @@
             const pageHeight = doc.internal.pageSize.getHeight();
             const margin = 20;
             const contentWidth = pageWidth - (2 * margin);
+            const lineHeight = 6;
             
             // Watermark function
             const addWatermark = (pageNum, totalPages) => {
-                doc.setFontSize(8);
-                doc.setTextColor(100, 100, 100);
-                doc.text(`viadecide.com | Page ${pageNum} of ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+                doc.setFontSize(7);
+                doc.setTextColor(150, 150, 150);
+                doc.text(`viadecide.com | Page ${pageNum} of ${totalPages}`, pageWidth / 2, pageHeight - 8, { align: 'center' });
                 
                 // Timestamp
                 const now = new Date();
@@ -471,117 +482,170 @@
                     timeStyle: 'short',
                     timeZone: 'Asia/Kolkata' 
                 });
-                doc.text(`Generated: ${timestamp}`, margin, pageHeight - 10);
+                doc.setFontSize(6);
+                doc.text(`Generated: ${timestamp}`, margin, pageHeight - 8);
             };
 
             let pageNum = 1;
             const totalPages = ENGINE_STATE.research_nodes.length + 1;
 
-            // Title Page
-            doc.setFontSize(24);
-            doc.setTextColor(255, 103, 31); // Brand orange
-            doc.text("RESEARCH JOURNEY", pageWidth / 2, 40, { align: 'center' });
+            // ========== TITLE PAGE ==========
+            doc.setFontSize(28);
+            doc.setTextColor(255, 103, 31);
+            doc.text("RESEARCH JOURNEY", pageWidth / 2, 50, { align: 'center' });
             
-            doc.setFontSize(12);
-            doc.setTextColor(0, 230, 118); // Accent green
-            doc.text("Powered by decide.engine", pageWidth / 2, 50, { align: 'center' });
+            doc.setFontSize(11);
+            doc.setTextColor(0, 200, 100);
+            doc.text("Powered by decide.engine", pageWidth / 2, 62, { align: 'center' });
+            
+            // Info box
+            doc.setDrawColor(200, 200, 200);
+            doc.setLineWidth(0.5);
+            doc.rect(margin + 10, 80, contentWidth - 20, 35);
             
             doc.setFontSize(10);
-            doc.setTextColor(150, 150, 150);
-            doc.text(`Total Nodes: ${ENGINE_STATE.research_nodes.length}`, pageWidth / 2, 65, { align: 'center' });
-            doc.text(`Source: ${ENGINE_STATE.research_nodes[0]?.sourceName || 'Wikipedia'}`, pageWidth / 2, 72, { align: 'center' });
+            doc.setTextColor(60, 60, 60);
+            doc.text(`Total Nodes: ${ENGINE_STATE.research_nodes.length}`, pageWidth / 2, 92, { align: 'center' });
+            doc.text(`Source: ${ENGINE_STATE.research_nodes[0]?.sourceName || 'Wikipedia'}`, pageWidth / 2, 100, { align: 'center' });
+            doc.text(`Export Date: ${new Date().toLocaleDateString('en-IN')}`, pageWidth / 2, 108, { align: 'center' });
             
             // CTA Box
             doc.setDrawColor(255, 103, 31);
-            doc.setFillColor(20, 20, 20);
-            doc.roundedRect(margin, 90, contentWidth, 40, 3, 3, 'FD');
+            doc.setFillColor(255, 250, 245);
+            doc.roundedRect(margin + 10, 135, contentWidth - 20, 50, 3, 3, 'FD');
             
             doc.setFontSize(14);
             doc.setTextColor(255, 103, 31);
-            doc.text("📚 Continue Your Research", pageWidth / 2, 105, { align: 'center' });
+            doc.text("Continue Your Research", pageWidth / 2, 152, { align: 'center' });
             
-            doc.setFontSize(10);
-            doc.setTextColor(240, 240, 240);
-            doc.text("Visit viadecide.com for more tools", pageWidth / 2, 115, { align: 'center' });
+            doc.setFontSize(9);
+            doc.setTextColor(100, 100, 100);
+            doc.text("Visit viadecide.com for intelligent decision tools", pageWidth / 2, 163, { align: 'center' });
+            doc.text("Research • Compare • Decide", pageWidth / 2, 172, { align: 'center' });
             
             addWatermark(pageNum, totalPages);
-            pageNum++;
 
-            // Research Nodes - ONE PER PAGE
+            // ========== RESEARCH NODES - ONE PER PAGE ==========
             ENGINE_STATE.research_nodes.forEach((node, index) => {
-                if (index > 0) {
-                    doc.addPage();
-                }
+                doc.addPage();
+                pageNum++;
                 
-                let yPos = 30;
+                let yPos = 25;
                 
-                // Node number badge
-                doc.setFillColor(0, 230, 118);
-                doc.roundedRect(margin, yPos - 5, 20, 10, 2, 2, 'F');
-                doc.setFontSize(10);
-                doc.setTextColor(0, 0, 0);
-                doc.text(`${index + 1}`, margin + 10, yPos + 2, { align: 'center' });
+                // Node number badge - larger and cleaner
+                doc.setFillColor(0, 200, 100);
+                doc.circle(margin + 8, yPos + 3, 8, 'F');
+                doc.setFontSize(11);
+                doc.setTextColor(255, 255, 255);
+                doc.setFont(undefined, 'bold');
+                doc.text(`${index + 1}`, margin + 8, yPos + 5, { align: 'center' });
                 
-                // Title
-                doc.setFontSize(16);
+                // Title - better formatting
+                yPos += 2;
+                doc.setFontSize(18);
                 doc.setTextColor(255, 103, 31);
-                const titleLines = doc.splitTextToSize(node.title, contentWidth - 30);
-                doc.text(titleLines, margin + 25, yPos);
-                yPos += (titleLines.length * 7) + 10;
+                doc.setFont(undefined, 'bold');
+                const titleLines = doc.splitTextToSize(node.title, contentWidth - 25);
+                doc.text(titleLines, margin + 20, yPos);
+                yPos += (titleLines.length * 8) + 8;
                 
-                // Source badge
+                doc.setFont(undefined, 'normal');
+                
+                // Source and metadata line
                 doc.setFontSize(8);
-                doc.setTextColor(100, 100, 100);
+                doc.setTextColor(120, 120, 120);
                 doc.text(`Source: ${node.sourceName}`, margin, yPos);
-                yPos += 10;
+                yPos += 6;
                 
-                // Categories
+                // Categories with better styling
                 if (node.categories && node.categories.length > 0) {
-                    doc.setFontSize(9);
-                    doc.setTextColor(150, 150, 150);
-                    const cats = node.categories.slice(0, 3).join(' • ');
-                    doc.text(cats, margin, yPos);
-                    yPos += 10;
+                    doc.setFontSize(8);
+                    doc.setTextColor(100, 100, 100);
+                    const cats = node.categories.slice(0, 4).join(' • ');
+                    const catLines = doc.splitTextToSize(cats, contentWidth);
+                    doc.text(catLines, margin, yPos);
+                    yPos += (catLines.length * 4.5) + 6;
                 }
                 
-                // Divider
-                doc.setDrawColor(50, 50, 50);
+                // Elegant divider
+                doc.setDrawColor(220, 220, 220);
+                doc.setLineWidth(0.5);
                 doc.line(margin, yPos, pageWidth - margin, yPos);
-                yPos += 10;
+                yPos += 12;
                 
-                // Summary
+                // Summary - better readability
                 doc.setFontSize(10);
-                doc.setTextColor(200, 200, 200);
+                doc.setTextColor(40, 40, 40);
+                doc.setFont(undefined, 'normal');
                 
-                const summaryText = node.summary.substring(0, 1000); // Limit length
+                // Clean the summary text
+                let summaryText = node.summary
+                    .replace(/\s+/g, ' ')  // Normalize whitespace
+                    .trim();
+                
+                // Split into paragraphs at sentence boundaries for better flow
+                const maxCharsPerPage = 2200;
+                if (summaryText.length > maxCharsPerPage) {
+                    summaryText = summaryText.substring(0, maxCharsPerPage);
+                    // Find last period
+                    const lastPeriod = summaryText.lastIndexOf('.');
+                    if (lastPeriod > maxCharsPerPage - 200) {
+                        summaryText = summaryText.substring(0, lastPeriod + 1);
+                    }
+                }
+                
+                // Split text to fit width with proper spacing
                 const lines = doc.splitTextToSize(summaryText, contentWidth);
                 
-                const maxLines = Math.floor((pageHeight - yPos - 30) / 6);
+                // Calculate available space
+                const availableHeight = pageHeight - yPos - 35; // Leave space for footer
+                const maxLines = Math.floor(availableHeight / lineHeight);
+                
+                // Render lines with proper spacing
                 const displayLines = lines.slice(0, maxLines);
+                displayLines.forEach((line, i) => {
+                    if (yPos < pageHeight - 35) {
+                        doc.text(line, margin, yPos);
+                        yPos += lineHeight;
+                    }
+                });
                 
-                doc.text(displayLines, margin, yPos);
-                yPos += displayLines.length * 6;
-                
+                // Truncation notice if needed
                 if (lines.length > maxLines) {
-                    doc.setFontSize(9);
-                    doc.setTextColor(100, 100, 100);
-                    doc.text("... (truncated for PDF)", margin, yPos + 5);
+                    yPos += 4;
+                    doc.setFontSize(8);
+                    doc.setTextColor(150, 150, 150);
+                    doc.setFont(undefined, 'italic');
+                    doc.text("... (content truncated for brevity)", margin, yPos);
+                    doc.setFont(undefined, 'normal');
                 }
                 
-                // URL at bottom (if space)
-                if (node.url && yPos < pageHeight - 40) {
+                // Footer section with link
+                if (node.url) {
+                    const footerY = pageHeight - 22;
+                    doc.setDrawColor(220, 220, 220);
+                    doc.setLineWidth(0.3);
+                    doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
+                    
                     doc.setFontSize(8);
-                    doc.setTextColor(0, 150, 255);
-                    doc.textWithLink("View full article", margin, pageHeight - 25, { url: node.url });
+                    doc.setTextColor(100, 100, 100);
+                    doc.text("Read full article:", margin, footerY);
+                    
+                    doc.setTextColor(0, 100, 200);
+                    doc.setFont(undefined, 'italic');
+                    const urlText = node.url.length > 60 ? node.url.substring(0, 60) + '...' : node.url;
+                    doc.textWithLink(urlText, margin, footerY + 5, { url: node.url });
+                    doc.setFont(undefined, 'normal');
                 }
                 
                 addWatermark(pageNum, totalPages);
-                pageNum++;
             });
 
-            // Save PDF
-            const timestamp = new Date().toISOString().slice(0, 10);
-            const filename = `research-journey-${timestamp}.pdf`;
+            // Save PDF with better filename
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0, 10);
+            const timeStr = now.toTimeString().slice(0, 5).replace(':', '');
+            const filename = `research-journey-${dateStr}-${timeStr}.pdf`;
             doc.save(filename);
             
             showToast("PDF DOWNLOADED!");
@@ -881,6 +945,7 @@
                 <div class="action-buttons">
                     ${context.url ? `<button class="btn" onclick="window.open('${context.url}', '_blank')">FULL ARTICLE</button>` : ''}
                     <button class="btn btn-amazon" onclick="window.open('${bookLink}', '_blank')">📚 FIND BOOK</button>
+                    <button class="btn btn-yt" onclick="openYouTubeSearch('${context.title}')">▶ WATCH ON YOUTUBE</button>
                 </div>
                 <button class="btn btn-pdf btn-full" onclick="generateResearchPDF()">📄 DOWNLOAD PDF (${ENGINE_STATE.research_nodes.length} NODES)</button>
                 <div class="nav-hint">

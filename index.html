@@ -60,11 +60,18 @@
         .slide-header {
             padding: 20px; border-left: 3px solid var(--brand-orange); height: 70px;
             flex-shrink: 0; z-index: 10; display: flex; align-items: center;
+            justify-content: space-between;
         }
 
         .header-title {
             font-family: var(--font-tech); font-size: 0.75rem; color: var(--brand-orange);
             letter-spacing: 1px; font-weight: 700; text-transform: uppercase;
+        }
+
+        .header-badge {
+            font-family: var(--font-tech); font-size: 0.6rem; color: #666;
+            background: #111; padding: 4px 10px; border-radius: 12px;
+            border: 1px solid #333;
         }
 
         .carousel-viewport { position: relative; flex-grow: 1; width: 100%; height: 100%; }
@@ -73,15 +80,32 @@
             position: absolute; inset: 0; padding: 25px; display: flex; flex-direction: column;
             justify-content: center; opacity: 0; pointer-events: none; transform: translateX(20px);
             transition: transform 0.3s ease, opacity 0.3s ease;
+            overflow-y: auto;
         }
 
         .sub-slide.opt-active { z-index: 30; opacity: 1; pointer-events: auto; transform: translateX(0); }
         .sub-slide.opt-hidden { z-index: 0; opacity: 0; pointer-events: none; }
         .sub-slide.static { z-index: 30; opacity: 1; pointer-events: auto; transform: none; }
 
-        h1 { font-size: 1.8rem; margin: 0 0 15px 0; line-height: 1; letter-spacing: -1px; color: var(--brand-orange); }
+        h1 { font-size: 1.8rem; margin: 0 0 15px 0; line-height: 1.2; letter-spacing: -1px; color: var(--brand-orange); }
         .primary-question { font-size: 1.1rem; color: #fff; margin-bottom: 25px; line-height: 1.4; font-weight: 600; }
-        .wiki-summary { font-size: 0.9rem; color: #aaa; line-height: 1.6; max-height: 200px; overflow-y: auto; margin-bottom: 20px; }
+        
+        .wiki-summary { 
+            font-size: 0.95rem; color: #ccc; line-height: 1.7; 
+            max-height: 45vh; overflow-y: auto; margin-bottom: 20px; 
+            padding: 15px; background: #111; border-radius: 8px;
+            border-left: 3px solid #333;
+        }
+
+        .wiki-meta {
+            display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;
+        }
+
+        .meta-chip {
+            font-family: var(--font-tech); font-size: 0.65rem;
+            background: #111; color: #888; padding: 6px 12px;
+            border-radius: 6px; border: 1px solid #333;
+        }
 
         .role-label {
             font-family: var(--font-tech); font-size: 0.6rem; color: #000;
@@ -113,15 +137,86 @@
         .btn-zomato { background: #cb202d; border: none; }
         .btn-blinkit { background: var(--accent-blinkit); color: #000; border: none; }
         .btn-wa { background: #25D366; color: #000; border: none; }
+        .btn-pdf { background: #d32f2f; border: none; color: #fff; }
         
         .lobby-container { display: flex; flex-direction: column; gap: 15px; padding: 30px; height: 100%; justify-content: center; }
         .cuisine-btn { background: #222; border: 1px solid #444; color: #888; padding: 20px; font-size: 1.1rem; font-weight: bold; text-transform: uppercase; border-radius: 12px; transition: all 0.2s; }
         .cuisine-btn.selected { background: var(--brand-orange); color: #000; border-color: var(--brand-orange); }
 
         #search-input { width: 100%; background: #111; border: 1px solid #333; color: #fff; padding: 15px; font-size: 1.2rem; border-radius: 8px; margin-bottom: 20px; outline: none; text-align: center; }
-        .source-toggle { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
-        .source-chip { padding: 5px 15px; border: 1px solid #333; border-radius: 20px; font-size: 0.7rem; color: #666; font-family: var(--font-tech); cursor: pointer; }
-        .source-chip.active { background: #333; color: var(--accent-go); border-color: var(--accent-go); }
+        
+        .source-toggle { 
+            display: flex; gap: 10px; margin-bottom: 20px; 
+            justify-content: center; flex-wrap: wrap;
+        }
+        
+        .source-chip { 
+            padding: 8px 16px; border: 1px solid #333; border-radius: 20px; 
+            font-size: 0.7rem; color: #666; font-family: var(--font-tech); 
+            cursor: pointer; transition: all 0.2s;
+        }
+        
+        .source-chip.active { 
+            background: #333; color: var(--accent-go); 
+            border-color: var(--accent-go); 
+        }
+
+        .loading-indicator {
+            text-align: center; padding: 40px;
+            font-family: var(--font-tech); color: #666;
+            font-size: 0.9rem;
+        }
+
+        .loading-spinner {
+            width: 40px; height: 40px; margin: 20px auto;
+            border: 3px solid #333;
+            border-top-color: var(--accent-go);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-box {
+            background: #331111; border: 1px solid #661111;
+            color: #ff6666; padding: 15px; border-radius: 8px;
+            margin: 20px 0; font-size: 0.9rem;
+        }
+
+        .success-box {
+            background: #113311; border: 1px solid #116611;
+            color: #66ff66; padding: 15px; border-radius: 8px;
+            margin: 20px 0; font-size: 0.9rem;
+        }
+
+        .link-card {
+            background: #111; border: 1px solid #333;
+            padding: 15px; border-radius: 8px; margin: 10px 0;
+            cursor: pointer; transition: all 0.2s;
+        }
+
+        .link-card:active {
+            background: #1a1a1a; border-color: var(--accent-go);
+        }
+
+        .link-title {
+            font-weight: 600; color: var(--accent-go);
+            margin-bottom: 5px; font-size: 0.95rem;
+        }
+
+        .link-desc {
+            font-size: 0.8rem; color: #888;
+            line-height: 1.4;
+        }
+
+        .action-buttons {
+            display: grid; 
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
 
         #depth-fill { position: fixed; right: 0; top: 0; bottom: 0; width: 4px; background: #333; z-index: 900; height: 0%; transition: height 0.05s linear; }
         
@@ -132,6 +227,9 @@
         #mic-toggle.listening { border-color: var(--accent-go); box-shadow: 0 0 15px rgba(0,230,118,0.3); }
         #mic-toggle svg { fill: #666; width: 24px; }
     </style>
+    
+    <!-- jsPDF Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -145,45 +243,137 @@
 
 <script>
     /* =========================================
-       KUTCH AUTOMATION | UNIVERSAL OS v46.0
+       KUTCH AUTOMATION | UNIVERSAL OS v48.0
+       ENHANCED WITH AMAZON AFFILIATE & PDF EXPORT
        ========================================= */
     
-    // 🧠 1. CONTEXT EXTRACTOR (WIKIPEDIA API)
+    // 🧠 ENHANCED MULTI-SOURCE RESEARCH ENGINE
     const WIKI_ENGINE = {
-        source: "wiki", 
-        endpoints: {
-            wiki: "https://en.wikipedia.org/w/api.php",
-            travel: "https://en.wikivoyage.org/w/api.php"
+        activeSource: "wiki",
+        cache: new Map(),
+        
+        sources: {
+            wiki: {
+                name: "WIKIPEDIA",
+                api: "https://en.wikipedia.org/w/api.php",
+                icon: "📚",
+                description: "General knowledge encyclopedia"
+            },
+            travel: {
+                name: "WIKIVOYAGE", 
+                api: "https://en.wikivoyage.org/w/api.php",
+                icon: "🗺️",
+                description: "Travel guides and destinations"
+            },
+            wikibooks: {
+                name: "WIKIBOOKS",
+                api: "https://en.wikibooks.org/w/api.php", 
+                icon: "📖",
+                description: "Educational textbooks"
+            },
+            wikinews: {
+                name: "WIKINEWS",
+                api: "https://en.wikinews.org/w/api.php",
+                icon: "📰", 
+                description: "News articles"
+            }
         },
-        async search(query) {
+
+        async search(query, source = this.activeSource) {
+            const cacheKey = `search_${source}_${query}`;
+            if (this.cache.has(cacheKey)) {
+                return this.cache.get(cacheKey);
+            }
+
             try {
-                const base = this.endpoints[this.source];
-                const url = `${base}?origin=*&action=opensearch&search=${encodeURIComponent(query)}&limit=1&format=json`;
+                const api = this.sources[source].api;
+                const url = `${api}?origin=*&action=opensearch&search=${encodeURIComponent(query)}&limit=5&format=json`;
+                
                 const res = await fetch(url);
+                if (!res.ok) throw new Error('Network response failed');
+                
                 const data = await res.json();
-                return data[1][0] || null; 
-            } catch(e) { return null; }
+                
+                const results = [];
+                if (data[1] && data[1].length > 0) {
+                    for (let i = 0; i < data[1].length; i++) {
+                        results.push({
+                            title: data[1][i],
+                            description: data[2][i] || '',
+                            url: data[3][i] || ''
+                        });
+                    }
+                }
+                
+                this.cache.set(cacheKey, results);
+                return results;
+            } catch(e) {
+                console.error('Search error:', e);
+                return [];
+            }
         },
-        async getContext(title) {
+
+        async getContext(title, source = this.activeSource) {
+            const cacheKey = `context_${source}_${title}`;
+            if (this.cache.has(cacheKey)) {
+                return this.cache.get(cacheKey);
+            }
+
             try {
-                const base = this.endpoints[this.source];
-                const url = `${base}?origin=*&action=query&prop=extracts|links&titles=${encodeURIComponent(title)}&exintro=1&explaintext=1&pllimit=10&plnamespace=0&format=json`;
+                const api = this.sources[source].api;
+                
+                const url = `${api}?origin=*&action=query&prop=extracts|info|pageimages|categories&titles=${encodeURIComponent(title)}&exintro=1&explaintext=1&inprop=url&piprop=thumbnail&pithumbsize=300&cllimit=10&format=json`;
+                
                 const res = await fetch(url);
+                if (!res.ok) throw new Error('Network response failed');
+                
                 const data = await res.json();
                 const pages = data.query.pages;
                 const pageId = Object.keys(pages)[0];
-                if(pageId === "-1") return null;
-                const p = pages[pageId];
-                return {
-                    title: p.title,
-                    summary: p.extract ? p.extract.split('. ')[0] + '.' : "No summary available.",
-                    links: p.links ? p.links.map(l => ({ name: l.title })) : []
+                
+                if (pageId === "-1") {
+                    throw new Error('Page not found');
+                }
+                
+                const page = pages[pageId];
+                
+                const linksUrl = `${api}?origin=*&action=query&prop=links&titles=${encodeURIComponent(title)}&pllimit=20&plnamespace=0&format=json`;
+                const linksRes = await fetch(linksUrl);
+                const linksData = await linksRes.json();
+                const linksPage = linksData.query.pages[pageId];
+                
+                const context = {
+                    title: page.title,
+                    summary: page.extract || "No summary available.",
+                    url: page.fullurl || '',
+                    thumbnail: page.thumbnail ? page.thumbnail.source : null,
+                    categories: page.categories ? page.categories.slice(0, 5).map(c => c.title.replace('Category:', '')) : [],
+                    links: linksPage && linksPage.links ? linksPage.links.map(l => ({
+                        name: l.title,
+                        ns: l.ns
+                    })) : [],
+                    source: source,
+                    sourceName: this.sources[source].name
                 };
-            } catch(e) { return null; }
+                
+                this.cache.set(cacheKey, context);
+                return context;
+            } catch(e) {
+                console.error('Context error:', e);
+                return null;
+            }
         }
     };
 
-    // 🧠 2. TRUTH DATABASES
+    // 💰 AFFILIATE SYSTEM
+    const AMZN_TAG = "decideos-21";
+    
+    function generateAmazonBookLink(topic) {
+        const query = encodeURIComponent(`${topic} book`);
+        return `https://www.amazon.in/s?k=${query}&tag=${AMZN_TAG}&linkCode=ll2`;
+    }
+
+    // 🧠 TRUTH DATABASES
     const PHONE_DATABASE = {
       "Poco F7": { attr: { camera: 6.0, gaming: 9.5, battery: 8.0, ui: 4.0 }, price: 29999 },
       "iQOO Neo 10R": { attr: { camera: 6.5, gaming: 9.0, battery: 7.5, ui: 5.0 }, price: 30999 },
@@ -204,7 +394,6 @@
         "Ball Pen Set": { attr: { comfort: 1.0, heaviness: 0.0, speed: 10.0, health: 10.0 }, price: 20 }
     };
 
-    // 🧠 3. VECTORS
     const CATEGORY_VECTORS = {
         "camera": { camera: 0.4 }, "gaming": { gaming: 0.4 },
         "comfort_food": { comfort: 0.45, heaviness: 0.20, speed: 0.10 },
@@ -213,9 +402,6 @@
         "bistro": { speed: 0.5, comfort: 0.2 } 
     };
 
-    // 💰 DEEP LINK SYSTEM
-    const AMZN_TAG = "decideos-21";
-    
     const DEEP_LINKS = {
         zomato: { app: q => `intent://search?q=${q}#Intent;scheme=zomato;package=com.application.zomato;end`, web: q => `https://www.zomato.com/search?q=${q}` },
         blinkit: { app: q => `blinkit://`, web: q => `https://blinkit.com/s/?q=${encodeURIComponent(q)}` },
@@ -236,15 +422,175 @@
               { label: "NON-FOOD", type: "mid_week", items: [{"name": "Tech Notebook"}, {"name": "Ball Pen Set"}] }
           ] 
       },
-      "research": { label: "WIKIPEDIA RESEARCH", categories: [] } 
+      "research": { label: "RESEARCH ENGINE", categories: [] } 
     };
 
-    let ENGINE_STATE = { cuisines_detected: [], items_detected: {}, session_weights: {}, active_filters: [] };
+    let ENGINE_STATE = { 
+        cuisines_detected: [], 
+        items_detected: {}, 
+        session_weights: {}, 
+        active_filters: [], 
+        research_history: [],
+        research_nodes: [] // For PDF generation
+    };
     let RAW_DATA = FALLBACK_MENU;
     let slideElements = [];
     let currentIdx = 0;
 
     async function boot() { renderLobby(); initVoice(); initSwipeSystem(); }
+
+    /* =========================================
+       PDF GENERATION ENGINE
+       ========================================= */
+    async function generateResearchPDF() {
+        if (ENGINE_STATE.research_nodes.length === 0) {
+            return showToast("NO RESEARCH TO EXPORT");
+        }
+
+        showToast("GENERATING PDF...");
+
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const margin = 20;
+            const contentWidth = pageWidth - (2 * margin);
+            
+            // Watermark function
+            const addWatermark = (pageNum, totalPages) => {
+                doc.setFontSize(8);
+                doc.setTextColor(100, 100, 100);
+                doc.text(`viadecide.com | Page ${pageNum} of ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+                
+                // Timestamp
+                const now = new Date();
+                const timestamp = now.toLocaleString('en-IN', { 
+                    dateStyle: 'medium', 
+                    timeStyle: 'short',
+                    timeZone: 'Asia/Kolkata' 
+                });
+                doc.text(`Generated: ${timestamp}`, margin, pageHeight - 10);
+            };
+
+            let pageNum = 1;
+            const totalPages = ENGINE_STATE.research_nodes.length + 1;
+
+            // Title Page
+            doc.setFontSize(24);
+            doc.setTextColor(255, 103, 31); // Brand orange
+            doc.text("RESEARCH JOURNEY", pageWidth / 2, 40, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.setTextColor(0, 230, 118); // Accent green
+            doc.text("Powered by decide.engine", pageWidth / 2, 50, { align: 'center' });
+            
+            doc.setFontSize(10);
+            doc.setTextColor(150, 150, 150);
+            doc.text(`Total Nodes: ${ENGINE_STATE.research_nodes.length}`, pageWidth / 2, 65, { align: 'center' });
+            doc.text(`Source: ${ENGINE_STATE.research_nodes[0]?.sourceName || 'Wikipedia'}`, pageWidth / 2, 72, { align: 'center' });
+            
+            // CTA Box
+            doc.setDrawColor(255, 103, 31);
+            doc.setFillColor(20, 20, 20);
+            doc.roundedRect(margin, 90, contentWidth, 40, 3, 3, 'FD');
+            
+            doc.setFontSize(14);
+            doc.setTextColor(255, 103, 31);
+            doc.text("📚 Continue Your Research", pageWidth / 2, 105, { align: 'center' });
+            
+            doc.setFontSize(10);
+            doc.setTextColor(240, 240, 240);
+            doc.text("Visit viadecide.com for more tools", pageWidth / 2, 115, { align: 'center' });
+            
+            addWatermark(pageNum, totalPages);
+            pageNum++;
+
+            // Research Nodes - ONE PER PAGE
+            ENGINE_STATE.research_nodes.forEach((node, index) => {
+                if (index > 0) {
+                    doc.addPage();
+                }
+                
+                let yPos = 30;
+                
+                // Node number badge
+                doc.setFillColor(0, 230, 118);
+                doc.roundedRect(margin, yPos - 5, 20, 10, 2, 2, 'F');
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+                doc.text(`${index + 1}`, margin + 10, yPos + 2, { align: 'center' });
+                
+                // Title
+                doc.setFontSize(16);
+                doc.setTextColor(255, 103, 31);
+                const titleLines = doc.splitTextToSize(node.title, contentWidth - 30);
+                doc.text(titleLines, margin + 25, yPos);
+                yPos += (titleLines.length * 7) + 10;
+                
+                // Source badge
+                doc.setFontSize(8);
+                doc.setTextColor(100, 100, 100);
+                doc.text(`Source: ${node.sourceName}`, margin, yPos);
+                yPos += 10;
+                
+                // Categories
+                if (node.categories && node.categories.length > 0) {
+                    doc.setFontSize(9);
+                    doc.setTextColor(150, 150, 150);
+                    const cats = node.categories.slice(0, 3).join(' • ');
+                    doc.text(cats, margin, yPos);
+                    yPos += 10;
+                }
+                
+                // Divider
+                doc.setDrawColor(50, 50, 50);
+                doc.line(margin, yPos, pageWidth - margin, yPos);
+                yPos += 10;
+                
+                // Summary
+                doc.setFontSize(10);
+                doc.setTextColor(200, 200, 200);
+                
+                const summaryText = node.summary.substring(0, 1000); // Limit length
+                const lines = doc.splitTextToSize(summaryText, contentWidth);
+                
+                const maxLines = Math.floor((pageHeight - yPos - 30) / 6);
+                const displayLines = lines.slice(0, maxLines);
+                
+                doc.text(displayLines, margin, yPos);
+                yPos += displayLines.length * 6;
+                
+                if (lines.length > maxLines) {
+                    doc.setFontSize(9);
+                    doc.setTextColor(100, 100, 100);
+                    doc.text("... (truncated for PDF)", margin, yPos + 5);
+                }
+                
+                // URL at bottom (if space)
+                if (node.url && yPos < pageHeight - 40) {
+                    doc.setFontSize(8);
+                    doc.setTextColor(0, 150, 255);
+                    doc.textWithLink("View full article", margin, pageHeight - 25, { url: node.url });
+                }
+                
+                addWatermark(pageNum, totalPages);
+                pageNum++;
+            });
+
+            // Save PDF
+            const timestamp = new Date().toISOString().slice(0, 10);
+            const filename = `research-journey-${timestamp}.pdf`;
+            doc.save(filename);
+            
+            showToast("PDF DOWNLOADED!");
+            
+        } catch (error) {
+            console.error('PDF generation error:', error);
+            showToast("PDF GENERATION FAILED");
+        }
+    }
 
     /* =========================================
        UI LOGIC
@@ -255,7 +601,10 @@
         const section = document.createElement('section');
         section.className = "main-slide active";
         
-        let html = `<div class="slide-header"><span class="header-title">DECIDE OS v46.0</span></div>
+        let html = `<div class="slide-header">
+                        <span class="header-title">DECIDE OS v48.0</span>
+                        <span class="header-badge">PDF EXPORT</span>
+                    </div>
                     <div class="lobby-container"><h1 style="text-align:center">SELECT DOMAIN</h1><div style="display:grid; gap:15px;">`;
         
         for(let key in RAW_DATA) {
@@ -279,7 +628,10 @@
     function handleStart() {
         if(ENGINE_STATE.cuisines_detected.length === 0) return showToast("SELECT DOMAIN");
         const domain = ENGINE_STATE.cuisines_detected[0];
-        if(domain === "research") renderSearchSlide();
+        if(domain === "research") {
+            ENGINE_STATE.research_nodes = []; // Reset research journey
+            renderSearchSlide();
+        }
         else { ENGINE_STATE.active_filters = []; renderSubLobby(domain); }
     }
 
@@ -328,7 +680,7 @@
         buildDeck(); 
     }
 
-    /* 🟢 RESEARCH BRANCH */
+    /* 🟢 ENHANCED RESEARCH BRANCH */
     function renderSearchSlide() {
         const container = document.getElementById('master-container');
         while(container.children.length > 1) container.removeChild(container.lastChild);
@@ -336,73 +688,258 @@
 
         const section = document.createElement('section');
         section.className = "main-slide next";
-        section.innerHTML = `<div class="slide-header"><span class="header-title">CONTEXT ENGINE</span></div>
+        
+        let sourcesHtml = '';
+        for (let key in WIKI_ENGINE.sources) {
+            const src = WIKI_ENGINE.sources[key];
+            const active = key === WIKI_ENGINE.activeSource ? 'active' : '';
+            sourcesHtml += `<span class="source-chip ${active}" onclick="setSource('${key}', this)" title="${src.description}">${src.icon} ${src.name}</span>`;
+        }
+        
+        section.innerHTML = `<div class="slide-header">
+                                <span class="header-title">RESEARCH ENGINE</span>
+                                <span class="header-badge">NODES: ${ENGINE_STATE.research_nodes.length}</span>
+                            </div>
                     <div class="lobby-container">
-                        <div class="source-toggle">
-                            <span class="source-chip active" onclick="setSource('wiki', this)">WIKIPEDIA</span>
-                            <span class="source-chip" onclick="setSource('travel', this)">WIKIVOYAGE</span>
-                        </div>
+                        <div class="source-toggle">${sourcesHtml}</div>
                         <h1>TOPIC?</h1>
-                        <input type="text" id="search-input" placeholder="e.g. Goa, AI, Mars...">
-                        <button class="btn btn-auto btn-full" onclick="executeSearch()">EXTRACT CONTEXT</button>
+                        <input type="text" id="search-input" placeholder="Enter topic...">
+                        <button class="btn btn-auto btn-full" onclick="executeSearch()">SEARCH</button>
+                        ${ENGINE_STATE.research_nodes.length > 0 ? '<button class="btn btn-pdf btn-full" onclick="generateResearchPDF()">📄 DOWNLOAD PDF</button>' : ''}
                     </div>`;
         
         container.appendChild(section);
         slideElements.push(section);
         goToSlide(1);
+        
+        setTimeout(() => {
+            const input = document.getElementById('search-input');
+            if (input) {
+                input.focus();
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') executeSearch();
+                });
+            }
+        }, 100);
     }
 
     function setSource(src, btn) {
-        WIKI_ENGINE.source = src;
+        WIKI_ENGINE.activeSource = src;
         document.querySelectorAll('.source-chip').forEach(c => c.classList.remove('active'));
         btn.classList.add('active');
-        document.getElementById('search-input').placeholder = src === 'travel' ? "e.g. Paris, Tokyo..." : "e.g. Quantum Physics...";
+        
+        const srcInfo = WIKI_ENGINE.sources[src];
+        const input = document.getElementById('search-input');
+        if (input) {
+            input.placeholder = `${srcInfo.icon} ${srcInfo.description}...`;
+        }
     }
 
     async function executeSearch() {
-        const query = document.getElementById('search-input').value;
+        const query = document.getElementById('search-input').value.trim();
         if(!query) return showToast("ENTER TOPIC");
-        showToast("EXTRACTING...");
-        const title = await WIKI_ENGINE.search(query);
-        if(!title) return showToast("NOT FOUND");
-        const context = await WIKI_ENGINE.getContext(title);
-        buildResearchDeck(context);
+        
+        const container = document.getElementById('master-container');
+        const loadingSlide = document.createElement('section');
+        loadingSlide.className = "main-slide next";
+        loadingSlide.innerHTML = `<div class="slide-header"><span class="header-title">SEARCHING...</span></div>
+            <div class="sub-slide static">
+                <div class="loading-indicator">
+                    <div class="loading-spinner"></div>
+                    <p>Searching ${WIKI_ENGINE.sources[WIKI_ENGINE.activeSource].name}...</p>
+                </div>
+            </div>`;
+        container.appendChild(loadingSlide);
+        slideElements.push(loadingSlide);
+        goToSlide(slideElements.length - 1);
+        
+        try {
+            const results = await WIKI_ENGINE.search(query);
+            
+            if (!results || results.length === 0) {
+                showErrorSlide("No results found. Try different keywords or switch sources.");
+                return;
+            }
+            
+            buildSearchResults(results, query);
+            
+        } catch (error) {
+            console.error('Search error:', error);
+            showErrorSlide("Search failed. Please check your connection and try again.");
+        }
+    }
+
+    function buildSearchResults(results, originalQuery) {
+        const container = document.getElementById('master-container');
+        
+        if (slideElements.length > 2) {
+            container.removeChild(container.lastChild);
+            slideElements.pop();
+        }
+        
+        const resultsSlide = document.createElement('section');
+        resultsSlide.className = "main-slide next";
+        resultsSlide.dataset.mode = "research";
+        
+        let html = `<div class="slide-header">
+                        <span class="header-title">RESULTS</span>
+                        <span class="header-badge">${results.length} FOUND</span>
+                    </div>
+                    <div class="carousel-viewport">`;
+        
+        results.forEach((result, i) => {
+            html += `<div class="sub-slide ${i === 0 ? 'opt-active' : 'opt-hidden'}" data-val="${result.title}">
+                        <div class="role-label">${WIKI_ENGINE.sources[WIKI_ENGINE.activeSource].icon} ${WIKI_ENGINE.sources[WIKI_ENGINE.activeSource].name}</div>
+                        <h1>${result.title}</h1>
+                        <div class="primary-question">${result.description || 'Click to view details'}</div>
+                        <div class="nav-hint">
+                            <span>&larr; MORE RESULTS</span>
+                            <span style="color:var(--accent-go)">VIEW DETAILS &darr;</span>
+                        </div>
+                    </div>`;
+        });
+        
+        html += `</div>`;
+        resultsSlide.innerHTML = html;
+        container.appendChild(resultsSlide);
+        slideElements.push(resultsSlide);
+        goToSlide(slideElements.length - 1);
+    }
+
+    async function loadArticleDetails(title) {
+        const container = document.getElementById('master-container');
+        
+        const loadingSlide = document.createElement('section');
+        loadingSlide.className = "main-slide next";
+        loadingSlide.innerHTML = `<div class="slide-header"><span class="header-title">LOADING...</span></div>
+            <div class="sub-slide static">
+                <div class="loading-indicator">
+                    <div class="loading-spinner"></div>
+                    <p>Extracting context...</p>
+                </div>
+            </div>`;
+        container.appendChild(loadingSlide);
+        slideElements.push(loadingSlide);
+        goToSlide(slideElements.length - 1);
+        
+        try {
+            const context = await WIKI_ENGINE.getContext(title);
+            
+            if (!context) {
+                showErrorSlide("Failed to load article. Please try again.");
+                return;
+            }
+            
+            // Add to research journey
+            ENGINE_STATE.research_history.push({
+                title: context.title,
+                source: context.source,
+                timestamp: Date.now()
+            });
+            
+            // Add to nodes for PDF
+            ENGINE_STATE.research_nodes.push(context);
+            
+            container.removeChild(container.lastChild);
+            slideElements.pop();
+            
+            buildResearchDeck(context);
+            
+        } catch (error) {
+            console.error('Load error:', error);
+            showErrorSlide("Failed to load article. Please try again.");
+        }
     }
 
     function buildResearchDeck(context) {
         const container = document.getElementById('master-container');
-        while(container.children.length > 2) container.removeChild(container.lastChild);
-        slideElements = slideElements.slice(0, 2);
-
+        
         const sumSlide = document.createElement('section');
         sumSlide.className = "main-slide next";
-        sumSlide.dataset.mode = "research"; 
-        sumSlide.innerHTML = `<div class="slide-header"><span class="header-title">SUMMARY</span></div>
+        sumSlide.dataset.mode = "research";
+        
+        let metaHtml = '';
+        if (context.categories && context.categories.length > 0) {
+            metaHtml = '<div class="wiki-meta">';
+            context.categories.forEach(cat => {
+                metaHtml += `<span class="meta-chip">${cat}</span>`;
+            });
+            metaHtml += '</div>';
+        }
+        
+        const bookLink = generateAmazonBookLink(context.title);
+        
+        sumSlide.innerHTML = `<div class="slide-header">
+                                <span class="header-title">ARTICLE</span>
+                                <span class="header-badge">${context.sourceName}</span>
+                            </div>
             <div class="carousel-viewport"><div class="sub-slide static">
-                <div class="role-label">${WIKI_ENGINE.source === 'travel' ? 'DESTINATION' : 'TOPIC'}</div>
+                <div class="role-label">${WIKI_ENGINE.sources[context.source].icon} ${context.sourceName}</div>
                 <h1>${context.title}</h1>
+                ${metaHtml}
                 <div class="wiki-summary">${context.summary}</div>
-                <div class="nav-hint"><span style="color:var(--accent-go)">SWIPE UP: BACK | DOWN: LINKS</span></div>
+                <div class="action-buttons">
+                    ${context.url ? `<button class="btn" onclick="window.open('${context.url}', '_blank')">FULL ARTICLE</button>` : ''}
+                    <button class="btn btn-amazon" onclick="window.open('${bookLink}', '_blank')">📚 FIND BOOK</button>
+                </div>
+                <button class="btn btn-pdf btn-full" onclick="generateResearchPDF()">📄 DOWNLOAD PDF (${ENGINE_STATE.research_nodes.length} NODES)</button>
+                <div class="nav-hint">
+                    <span>UP: BACK</span>
+                    <span style="color:var(--accent-go)">DOWN: ${context.links.length} LINKS</span>
+                </div>
             </div></div>`;
         container.appendChild(sumSlide);
         slideElements.push(sumSlide);
 
-        const linkSlide = document.createElement('section');
-        linkSlide.className = "main-slide next";
-        linkSlide.dataset.mode = "research"; 
-        let html = `<div class="slide-header"><span class="header-title">SUB-NODES</span></div><div class="carousel-viewport">`;
-        context.links.forEach((link, i) => {
-             html += `<div class="sub-slide ${i===0?'opt-active':'opt-hidden'}" data-val="${link.name}">
-                        <div class="role-label">RELATED NODE</div><h1>${link.name}</h1>
-                        <div class="primary-question">Swipe Down to Extract</div>
-                        <div class="nav-hint"><span>&larr; NEXT</span><span style="color:var(--accent-go)">EXTRACT &darr;</span></div>
-                     </div>`;
-        });
-        html += `</div>`;
-        linkSlide.innerHTML = html;
-        container.appendChild(linkSlide);
-        slideElements.push(linkSlide);
-        goToSlide(2);
+        if (context.links && context.links.length > 0) {
+            const linkSlide = document.createElement('section');
+            linkSlide.className = "main-slide next";
+            linkSlide.dataset.mode = "research";
+            
+            let html = `<div class="slide-header">
+                            <span class="header-title">RELATED TOPICS</span>
+                            <span class="header-badge">${context.links.length} LINKS</span>
+                        </div><div class="carousel-viewport">`;
+            
+            context.links.forEach((link, i) => {
+                html += `<div class="sub-slide ${i === 0 ? 'opt-active' : 'opt-hidden'}" data-val="${link.name}">
+                            <div class="role-label">RELATED NODE</div>
+                            <h1>${link.name}</h1>
+                            <div class="primary-question">Explore this related topic</div>
+                            <div class="nav-hint">
+                                <span>&larr; MORE TOPICS</span>
+                                <span style="color:var(--accent-go)">EXPLORE &darr;</span>
+                            </div>
+                         </div>`;
+            });
+            html += `</div>`;
+            linkSlide.innerHTML = html;
+            container.appendChild(linkSlide);
+            slideElements.push(linkSlide);
+        }
+        
+        goToSlide(slideElements.length - 2);
+    }
+
+    function showErrorSlide(message) {
+        const container = document.getElementById('master-container');
+        
+        if (slideElements.length > 2 && slideElements[slideElements.length - 1].querySelector('.loading-indicator')) {
+            container.removeChild(container.lastChild);
+            slideElements.pop();
+        }
+        
+        const errorSlide = document.createElement('section');
+        errorSlide.className = "main-slide next";
+        errorSlide.innerHTML = `<div class="slide-header"><span class="header-title">ERROR</span></div>
+            <div class="sub-slide static">
+                <div class="error-box">${message}</div>
+                <button class="btn btn-full" onclick="goToSlide(Math.max(0, currentIdx - 1))">GO BACK</button>
+                <button class="btn btn-full" onclick="location.reload()">RESTART</button>
+            </div>`;
+        container.appendChild(errorSlide);
+        slideElements.push(errorSlide);
+        goToSlide(slideElements.length - 1);
     }
 
     /* 🔴 STANDARD BRANCH */
@@ -453,7 +990,6 @@
         goToSlide(2); 
     }
 
-    /* 🧠 PLATFORM RESOLVER */
     function resolvePlatform() {
         const text = Object.keys(ENGINE_STATE.items_detected).join(" ").toLowerCase();
         if (text.match(/iphone|samsung|phone|vivo|poco|iqoo|charger|buds|realme|xiaomi/)) return "amazon";
@@ -462,7 +998,7 @@
     }
 
     /* =========================================
-       UX PHYSICS ENGINE (DELEGATED EVENTS)
+       UX PHYSICS ENGINE
        ========================================= */
     let touchStartX = 0, touchStartY = 0;
 
@@ -498,7 +1034,6 @@
             const mode = mainSlide.dataset.mode;
             const catType = mainSlide.dataset.catType;
 
-            // 🟢 SWIPE DOWN
             if(Math.abs(dy) > 80 && dy > 0) { 
                 const activeSub = view.querySelector('.sub-slide.opt-active') || view.querySelector('.sub-slide.static');
                 if(!activeSub) return;
@@ -506,8 +1041,7 @@
                 const val = activeSub.dataset.val;
                 
                 if(mode === "research" && val) {
-                    document.getElementById('search-input').value = val;
-                    executeSearch(); 
+                    loadArticleDetails(val);
                 } else if (val) {
                     ENGINE_STATE.items_detected[val] = {qty:1};
                     if(catType && CATEGORY_VECTORS[catType]) {
@@ -520,7 +1054,6 @@
                     goToSlide(currentIdx + 1);
                 }
             } 
-            // 🔴 SWIPE UP
             else if (dy < -80) {
                 if(mode === "research") {
                     showToast("BACK");
@@ -529,7 +1062,6 @@
                     goToSlide(currentIdx - 1);
                 }
             }
-            // 🟡 SWIPE SIDE
             else if(Math.abs(dx) > 60) { 
                 const slides = Array.from(view.querySelectorAll('.sub-slide'));
                 if(slides.length <= 1) return;
@@ -545,7 +1077,7 @@
     }
 
     function goToSlide(idx) {
-        if(idx < 0) return;
+        if(idx < 0 || idx >= slideElements.length) return;
         slideElements[currentIdx].classList.replace('active', idx>currentIdx?'prev':'next');
         currentIdx = idx;
         slideElements[currentIdx].className = "main-slide active";
@@ -598,7 +1130,6 @@
         document.getElementById('btn-zomato').style.display = mode === 'zomato' ? 'block' : 'none';
     }
 
-    // 🟢 BULLETPROOF CLIPBOARD FIX
     function forceCopy(text) {
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(text).catch(err => fallbackCopy(text));
@@ -623,7 +1154,7 @@
         const item = Object.keys(ENGINE_STATE.items_detected)[0];
         if(!item) return showToast("NOTHING SELECTED");
         
-        forceCopy(item); // 👈 USING THE FIX
+        forceCopy(item);
         showToast("LINK COPIED");
 
         const autoMode = resolvePlatform();
@@ -641,11 +1172,21 @@
     function sendWa() {
         const items = Object.keys(ENGINE_STATE.items_detected).join(', ');
         const text = encodeURIComponent(`DECISION: ${items}`);
-        window.open(`https://wa.me/916351537770?text=${text}`);
+        window.open(`https://wa.me/?text=${text}`);
     }
 
-    function showToast(m) { const t=document.getElementById('toast'); t.innerText=m; t.classList.add('visible'); setTimeout(()=>t.classList.remove('visible'),2000); }
-    function initVoice() { /* Basic setup kept */ }
+    function showToast(m) { 
+        const t = document.getElementById('toast'); 
+        t.innerText = m; 
+        t.classList.add('visible'); 
+        setTimeout(() => t.classList.remove('visible'), 2000); 
+    }
+    
+    function toggleListenMode() {
+        showToast("VOICE: NOT IMPLEMENTED");
+    }
+    
+    function initVoice() { }
 
     boot();
 </script>

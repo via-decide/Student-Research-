@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>| decide.engine |</title>
-
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#0a0a0a" />
   <meta name="background-color" content="#0a0a0a" />
@@ -15,7 +14,13 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="application-name" content="decide.engine" />
   <meta name="description" content="Voice-first decision engine" />
-
+  <!-- PDF libs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+  <!-- Optional font for Pro PDF -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
       --brand-orange: #ff671f;
@@ -24,7 +29,6 @@
       --accent-go: #00e676;
       --accent-skip: #ff3333;
       --accent-zomato: #cb202d;
-      --accent-swiggy: #fc8019;
       --accent-blinkit: #f8cb46;
       --font-tech: 'Courier New', monospace;
       --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -92,11 +96,10 @@
     .sub-slide.opt-hidden { z-index: 0; opacity: 0; pointer-events: none; }
     .sub-slide.static { z-index: 30; opacity: 1; pointer-events: auto; transform: none; }
 
-    /* ✅ ARTICLE layout: top aligned + safe bottom padding so actions never feel clipped */
     .sub-slide.article-view {
       justify-content: flex-start;
       padding-top: 16px;
-      padding-bottom: 170px; /* space for sticky action bar + mic */
+      padding-bottom: 170px;
     }
 
     h1 {
@@ -106,12 +109,12 @@
       letter-spacing: -1px;
       color: var(--brand-orange);
     }
+
     .primary-question {
       font-size: 1.05rem; color: #fff;
       margin-bottom: 16px; line-height: 1.45; font-weight: 600;
     }
 
-    /* ---------- CONTEXT FORMATTING ---------- */
     .context-panel{
       background:#0f1318;
       border:1px solid #2a3342;
@@ -120,9 +123,9 @@
       margin-bottom:12px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.25);
     }
-    .context-top {
-      display:flex; gap:12px; align-items:flex-start; margin-bottom:12px;
-    }
+
+    .context-top { display:flex; gap:12px; align-items:flex-start; margin-bottom:12px; }
+
     .thumb {
       width:64px; height:64px; border-radius:14px;
       background:#111; border:1px solid #2a3342;
@@ -131,15 +134,14 @@
       color:#666; font-family:var(--font-tech); font-size:0.7rem;
     }
     .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+
     .context-title-wrap{ flex:1; min-width:0; }
     .context-kicker{
       font-family:var(--font-tech); font-size:0.65rem; letter-spacing:1px;
       color:#9aa3b2; text-transform:uppercase;
       margin-bottom:6px;
     }
-    .context-stats{
-      display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;
-    }
+    .context-stats{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
     .stat-chip{
       font-family:var(--font-tech); font-size:0.65rem;
       background:#0b0f14; color:#c0c7d6;
@@ -164,53 +166,42 @@
       margin: 10px 0 8px;
     }
 
-    /* ✅ Compact takeaways to prevent layout break */
     .takeaways{
       background:#0b0f14;
       border:1px solid #2a3342;
       border-radius:12px;
       padding:10px 12px;
       margin-bottom:12px;
-
       max-height: 24vh;
       overflow-y:auto;
-
       touch-action: pan-y;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
+      user-select:text;
+      -webkit-user-select:text;
     }
     .takeaways ul{ margin: 8px 0 0 18px; padding:0; }
-    .takeaways li{
-      color:#d6dde8;
-      line-height:1.55;
-      margin:6px 0;
-      font-size:0.95rem;
-    }
+    .takeaways li{ color:#d6dde8; line-height:1.55; margin:6px 0; font-size:0.95rem; }
 
     .wiki-summary{
       font-size:0.98rem;
       color:#d6dde8;
       line-height:1.75;
-
-      max-height: 36vh; /* more predictable on mobile */
+      max-height: 36vh;
       overflow-y:auto;
-
       padding: 14px;
       background: #0b0f14;
       border-radius: 12px;
       border: 1px solid #2a3342;
-
       touch-action: pan-y;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
+      user-select:text;
+      -webkit-user-select:text;
     }
     .wiki-summary p{ margin: 0 0 12px 0; }
     .wiki-summary p:last-child{ margin-bottom:0; }
-    .wiki-summary .lead{
-      color:#ffffff;
-      font-weight:800;
-      margin-bottom:12px;
-    }
+    .wiki-summary .lead{ color:#ffffff; font-weight:800; margin-bottom:12px; }
     .wiki-summary .muted{ color:#a8b3c2; }
 
     .role-label {
@@ -261,7 +252,14 @@
     .btn-pdf { background:#d32f2f; border:none; color:#fff; }
     .btn-yt { background:#ff0000; border:none; }
 
+    .btn-pro {
+      background:#121a24;
+      border:1px solid rgba(0,230,118,0.65);
+      color:#00e676;
+    }
+
     .lobby-container { display:flex; flex-direction:column; gap:15px; padding:30px; height:100%; justify-content:center; }
+
     .cuisine-btn {
       background:#161616; border:1px solid #2a3342; color:#c0c7d6;
       padding:18px; font-size:1.05rem;
@@ -311,7 +309,6 @@
       margin:20px 0; font-size:0.9rem;
     }
 
-    /* ✅ Sticky action bar for article: keeps actions reachable */
     .action-bar {
       position: sticky;
       bottom: 0;
@@ -351,28 +348,85 @@
     #mic-toggle.listening { border-color: var(--accent-go); box-shadow: 0 0 18px rgba(0,230,118,0.25); }
     #mic-toggle svg { fill: #9aa3b2; width: 24px; }
 
-    /* Reduce accidental selection while still allowing scroll in panels */
-    .wiki-summary, .takeaways { user-select: text; -webkit-user-select: text; }
+    /* ===== PRO UI PDF (hidden renderer) ===== */
+    #pro-ui-root{
+      position: fixed;
+      left: -99999px;
+      top: 0;
+      width: 794px;
+      background:#0b1220;
+      color:#fff;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      z-index:-1;
+    }
+    .proui-doc{ width: 794px; background:#0b1220; }
+    .proui-page{
+      padding: 36px 40px;
+      min-height: 1123px;
+      border-top: 1px solid rgba(255,255,255,.10);
+      position: relative;
+    }
+    .proui-page:first-child{ border-top:none; }
+    .proui-wm{
+      position:absolute; left:0; right:0; bottom:18px;
+      text-align:center;
+      font-size:11px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      color: rgba(255,255,255,.35);
+    }
+    .proui-title{
+      font-size:34px; font-weight:900; letter-spacing:-.03em; margin:0;
+      color:#6ee7ff;
+    }
+    .proui-subtitle{ margin:10px 0 0; color: rgba(255,255,255,.70); line-height:1.5; }
+    .proui-pillrow{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+    .proui-pill{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.04);
+      padding:7px 10px;
+      border-radius:999px;
+      font-size:12px;
+      color: rgba(255,255,255,.78);
+    }
+    .proui-card{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:18px;
+      padding:16px;
+    }
+    .proui-h{
+      margin:0 0 8px 0;
+      font-size:12px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color: rgba(255,255,255,.72);
+    }
+    .proui-grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    .proui-kv{ display:grid; grid-template-columns: 1fr auto; gap:8px 10px; font-size:13px; }
+    .proui-k{ color: rgba(255,255,255,.65); }
+    .proui-v{ font-weight:800; color: rgba(255,255,255,.90); text-align:right; }
+    .proui-list{ margin:0; padding-left:18px; color: rgba(255,255,255,.86); line-height:1.55; font-size:13px; }
+    .proui-list li{ margin:6px 0; }
+    .proui-nodeTitle{ font-size:18px; font-weight:900; margin:0; color:#a78bfa; }
+    .proui-small{ font-size:12px; color: rgba(255,255,255,.70); line-height:1.5; }
   </style>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
-
 <body>
   <div id="master-container"></div>
   <div id="depth-fill"></div>
   <div id="toast" class="toast-msg"></div>
-
   <div id="mic-toggle" onclick="toggleListenMode()">
     <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
   </div>
-
-<script>
+  <!-- Hidden Pro UI render root -->
+  <div id="pro-ui-root" aria-hidden="true"></div>
+  <script>
 /* =========================================
-   DECIDE OS v49.0
-   - Stable mobile UI for ARTICLE view
-   - Swipe guard for scroll panels
-   - Robust API fetch (timeout + safe parsing)
+   DECIDE OS v49.2 (FULL)
+   - Research branch
+   - Classic PDF + Pro UI PDF
+   - Never blank crash guard
    ========================================= */
 
 /* ---------- robust fetch helpers ---------- */
@@ -388,20 +442,17 @@ async function fetchJSON(url, { timeoutMs = 9000 } = {}) {
   }
 }
 
-/* ---------- HTML helpers ---------- */
+/* ---------- helpers ---------- */
 function escapeHTML(str){
   return (str || "")
     .replaceAll("&","&amp;")
     .replaceAll("<","&lt;")
     .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
+    .replaceAll("\"","&quot;")
     .replaceAll("'","&#039;");
 }
 function normalizeText(text){
-  return (text || "")
-    .replace(/\s+/g, " ")
-    .replace(/\u00AD/g, "")
-    .trim();
+  return (text || "").replace(/\s+/g, " ").replace(/\u00AD/g, "").trim();
 }
 function isNoSummary(summary){
   const s = normalizeText(summary || "").toLowerCase();
@@ -455,7 +506,6 @@ function openWikipedia(title){
 const WIKI_ENGINE = {
   activeSource: "wiki",
   cache: new Map(),
-
   sources: {
     wiki: { name: "WIKIPEDIA", api: "https://en.wikipedia.org/w/api.php", icon: "📚", description: "General knowledge encyclopedia" },
     travel: { name: "WIKIVOYAGE", api: "https://en.wikivoyage.org/w/api.php", icon: "🗺️", description: "Travel guides and destinations" },
@@ -512,7 +562,6 @@ const WIKI_ENGINE = {
       if (!firstKey || firstKey === "-1") throw new Error("Page not found");
       const page = pages[firstKey];
 
-      // links call (robust parse)
       const linksUrl =
         `${api}?origin=*&action=query&prop=links&titles=${encodeURIComponent(t)}` +
         `&pllimit=20&plnamespace=0&format=json`;
@@ -548,7 +597,7 @@ const WIKI_ENGINE = {
 };
 
 /* =========================================
-   TRUTH DATABASES (UNCHANGED)
+   STANDARD BRANCH DBs
    ========================================= */
 const PHONE_DATABASE = {
   "Poco F7": { attr: { camera: 6.0, gaming: 9.5, battery: 8.0, ui: 4.0 }, price: 29999 },
@@ -601,6 +650,7 @@ const FALLBACK_MENU = {
   "research": { label: "RESEARCH ENGINE", categories: [] }
 };
 
+/* ---------- state ---------- */
 let ENGINE_STATE = {
   cuisines_detected: [],
   items_detected: {},
@@ -614,10 +664,8 @@ let RAW_DATA = FALLBACK_MENU;
 let slideElements = [];
 let currentIdx = 0;
 
-async function boot(){ renderLobby(); initVoice(); initSwipeSystem(); }
-
 /* =========================================
-   PDF GENERATION ENGINE (kept compatible)
+   PDF: Classic
    ========================================= */
 function sanitizeForPDF(text){
   return normalizeText(text).replace(/[^\x00-\xFF]/g, "");
@@ -816,7 +864,180 @@ async function generateResearchPDF() {
 }
 
 /* =========================================
-   UI LOGIC
+   PDF: Pro UI (html2pdf)
+   ========================================= */
+function buildProUIModelFromResearch() {
+  const nodes = ENGINE_STATE.research_nodes || [];
+  const first = nodes[0];
+
+  return {
+    meta: {
+      // Use the first node's title as the main title if available, otherwise fallback
+      title: (first?.title ? first.title.toUpperCase() : "RESEARCH BRIEF"),
+      subtitle: "Saved nodes → structured takeaways → export-ready pro brief",
+      preparedFor: "decide.engine | Research",
+      date: new Date().toLocaleDateString('en-IN', { timeZone:'Asia/Kolkata' }),
+      watermark: "Decision Architecture • Research"
+    },
+    stats: {
+      nodes: nodes.length,
+      primarySource: first?.sourceName || "Wikipedia",
+      generated: new Date().toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short', timeZone:'Asia/Kolkata' })
+    },
+    nodes: nodes.map((n, idx) => ({
+      idx: idx + 1,
+      title: n.title || "",
+      sourceName: n.sourceName || "",
+      url: n.url || "",
+      categories: (n.categories || []).slice(0, 6),
+      takeaways: extractTakeaways(n.summary || "", 4),
+      summary: n.summary || ""
+    }))
+  };
+}
+
+function renderProUIDocHTML(model) {
+  const esc = escapeHTML;
+  const wm = esc(model.meta?.watermark || "");
+
+  // Build cover page: include snapshot stats, a brief insight card from the first node, and index.
+  const firstNode = model.nodes[0] || {};
+  const coverTakeaways = (firstNode.takeaways && firstNode.takeaways.length)
+    ? firstNode.takeaways.map(t => `<li>${esc(t)}</li>`).join("")
+    : '<li>No insights available</li>';
+
+  const cover = `
+    <div class="proui-page">
+      <div class="proui-pillrow">
+        <div class="proui-pill">${esc(model.meta.preparedFor || "")}</div>
+        <div class="proui-pill">${esc(model.meta.date || "")}</div>
+        <div class="proui-pill">Research Brief</div>
+      </div>
+
+      <h1 class="proui-title">${esc(model.meta.title || "")}</h1>
+      <p class="proui-subtitle">${esc(model.meta.subtitle || "")}</p>
+
+      <div class="proui-grid2">
+        <div class="proui-card">
+          <div class="proui-h">Snapshot</div>
+          <div class="proui-kv">
+            <div class="proui-k">Nodes</div><div class="proui-v">${esc(String(model.stats.nodes))}</div>
+            <div class="proui-k">Source</div><div class="proui-v">${esc(model.stats.primarySource)}</div>
+            <div class="proui-k">Generated</div><div class="proui-v">${esc(model.stats.generated)}</div>
+          </div>
+        </div>
+        <div class="proui-card">
+          <div class="proui-h">Insights</div>
+          <ul class="proui-list">
+            ${coverTakeaways}
+          </ul>
+        </div>
+      </div>
+
+      <div style="height:16px"></div>
+
+      <div class="proui-card">
+        <div class="proui-h">Index</div>
+        <ul class="proui-list">
+          ${model.nodes.map(n => `<li>#${n.idx} — ${esc(n.title)}</li>`).join("")}
+        </ul>
+      </div>
+
+      <div class="proui-wm">${wm}</div>
+    </div>
+  `;
+
+  const nodePages = model.nodes.map(n => {
+    const takeaways = (n.takeaways || []).length
+      ? (n.takeaways || []).map(t => `<li>${esc(t)}</li>`).join("")
+      : `<li>No takeaways available</li>`;
+
+    const cats = (n.categories || []).length
+      ? `<div style="margin-top:10px" class="proui-small"><strong>Categories:</strong> ${esc(n.categories.join(" • "))}</div>`
+      : "";
+
+    let summary = sanitizeForPDF(n.summary || "");
+    if (summary.length > 2400) summary = summary.slice(0, 2400);
+
+    const sents = splitIntoSentences(summary);
+    const lead = sents[0] || summary;
+    const rest = sents.slice(1);
+
+    const restParas = [];
+    for (let i = 0; i < rest.length; i += 3) restParas.push(rest.slice(i, i+3).join(" "));
+
+    return `
+      <div class="proui-page">
+        <div class="proui-card" style="margin-bottom:16px;">
+          <div class="proui-h">Node ${n.idx}</div>
+          <div class="proui-nodeTitle">${esc(n.title)}</div>
+          <div class="proui-small" style="margin-top:6px;">
+            <strong>Source:</strong> ${esc(n.sourceName)}
+          </div>
+          ${cats}
+        </div>
+
+        <div class="proui-grid2">
+          <div class="proui-card">
+            <div class="proui-h">Key takeaways</div>
+            <ul class="proui-list">${takeaways}</ul>
+          </div>
+
+          <div class="proui-card">
+            <div class="proui-h">Summary</div>
+            <div class="proui-small">
+              <p style="margin:0 0 8px 0; font-weight:800; color:#e2e8f0;">${esc(lead)}</p>
+              ${restParas.map(p => `<p style="margin:0 0 8px 0;">${esc(p)}</p>`).join("")}
+            </div>
+          </div>
+        </div>
+
+        <div style="height:16px"></div>
+
+        <div class="proui-card">
+          <div class="proui-h">Full article</div>
+          <div class="proui-small">${n.url ? esc(n.url) : "No URL available"}</div>
+        </div>
+
+        <div class="proui-wm">${wm}</div>
+      </div>
+    `;
+  }).join("");
+
+  return `<div class="proui-doc">${cover}${nodePages}</div>`;
+}
+
+async function generateResearchProUIPDF() {
+  if (!ENGINE_STATE.research_nodes || ENGINE_STATE.research_nodes.length === 0) {
+    return showToast("NO RESEARCH TO EXPORT");
+  }
+  showToast("PRO UI PDF...");
+
+  try {
+    const model = buildProUIModelFromResearch();
+    const root = document.getElementById("pro-ui-root");
+    root.innerHTML = renderProUIDocHTML(model);
+
+    const filename = `research-pro-ui-${new Date().toISOString().slice(0,10)}.pdf`;
+
+    const opt = {
+      margin: 0,
+      filename,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#0b1220" },
+      jsPDF: { unit: "pt", format: "a4", orientation: "portrait" }
+    };
+
+    await html2pdf().set(opt).from(root.firstElementChild).save();
+    showToast("PRO PDF DOWNLOADED!");
+  } catch (e) {
+    console.error("Pro UI PDF error:", e);
+    showToast("PRO PDF FAILED");
+  }
+}
+
+/* =========================================
+   UI: Lobby + Standard branch + Research branch
    ========================================= */
 function renderLobby() {
   const container = document.getElementById('master-container');
@@ -825,8 +1046,8 @@ function renderLobby() {
   section.className = "main-slide active";
 
   let html = `<div class="slide-header">
-    <span class="header-title">DECIDE OS v49.0</span>
-    <span class="header-badge">RESEARCH</span>
+    <span class="header-title">DECIDE OS v49.2</span>
+    <span class="header-badge">HOME</span>
   </div>
   <div class="lobby-container">
     <h1 style="text-align:center">SELECT DOMAIN</h1>
@@ -838,7 +1059,7 @@ function renderLobby() {
   }
 
   html += `</div>
-    <button class="btn btn-auto btn-full" style="margin-top:18px" onclick="handleStart()">NEXT &rarr;</button>
+    <button class="btn btn-full" style="margin-top:18px" onclick="handleStart()">NEXT →</button>
   </div>`;
 
   section.innerHTML = html;
@@ -856,6 +1077,7 @@ function toggleDomain(id, btn) {
 function handleStart() {
   if (ENGINE_STATE.cuisines_detected.length === 0) return showToast("SELECT DOMAIN");
   const domain = ENGINE_STATE.cuisines_detected[0];
+
   if (domain === "research") {
     ENGINE_STATE.research_nodes = [];
     renderSearchSlide();
@@ -865,6 +1087,7 @@ function handleStart() {
   }
 }
 
+/* ---------- standard branch UI ---------- */
 function renderSubLobby(domain) {
   const container = document.getElementById('master-container');
   while (container.children.length > 1) container.removeChild(container.lastChild);
@@ -874,9 +1097,9 @@ function renderSubLobby(domain) {
   section.className = "main-slide next";
 
   const title = domain === 'food' ? "AAJ KYA MANGVAAYEGE!" : "SELECT PRIORITY";
-  const categories = RAW_DATA[domain].categories;
+  const categories = RAW_DATA[domain].categories || [];
 
-  let html = `<div class="slide-header"><span class="header-title">FILTER</span></div>
+  let html = `<div class="slide-header"><span class="header-title">FILTER</span><span class="header-badge">${domain.toUpperCase()}</span></div>
   <div class="lobby-container">
     <h1 style="text-align:center; text-transform:uppercase;">${title}</h1>
     <div style="display:grid; gap:14px;">`;
@@ -885,7 +1108,7 @@ function renderSubLobby(domain) {
     html += `<button class="cuisine-btn" id="filter-btn-${idx}" onclick="toggleFilter('${escapeHTML(cat.label)}', ${idx})">${escapeHTML(cat.label)}</button>`;
   });
 
-  html += `</div><button class="btn btn-auto btn-full" style="margin-top:18px" onclick="startHunt()">HUNT &rarr;</button></div>`;
+  html += `</div><button class="btn btn-full" style="margin-top:18px" onclick="startHunt()">HUNT →</button></div>`;
 
   section.innerHTML = html;
   container.appendChild(section);
@@ -895,6 +1118,8 @@ function renderSubLobby(domain) {
 
 function toggleFilter(label, idx) {
   const btn = document.getElementById(`filter-btn-${idx}`);
+  if (!btn) return;
+
   if (ENGINE_STATE.active_filters.includes(label)) {
     ENGINE_STATE.active_filters = ENGINE_STATE.active_filters.filter(x => x !== label);
     btn.classList.remove('selected');
@@ -910,7 +1135,158 @@ function startHunt() {
   buildDeck();
 }
 
-/* 🟢 RESEARCH BRANCH */
+function buildDeck() {
+  const container = document.getElementById('master-container');
+  while(container.children.length > 2) container.removeChild(container.lastChild);
+  slideElements = slideElements.slice(0, 2);
+
+  const domain = ENGINE_STATE.cuisines_detected[0];
+  const allCats = RAW_DATA[domain].categories || [];
+  const targetCats = allCats.filter(c => ENGINE_STATE.active_filters.includes(c.label));
+
+  let slides = [];
+  targetCats.forEach(cat => slides.push({ type:'opt', title: cat.label, items: cat.items, catType: cat.type }));
+  slides.push({ type:'final' });
+
+  slides.forEach((s) => {
+    const el = document.createElement('section');
+    el.className = `main-slide next`;
+    el.dataset.catType = s.catType || "";
+
+    if (s.type === 'final') {
+      el.innerHTML = `<div class="slide-header"><span class="header-title">FINAL</span><span class="header-badge">OUTPUT</span></div>
+      <div class="sub-slide static article-view">
+        <div class="input-group" id="final-list"></div>
+        <div class="final-actions">
+          <button class="btn btn-amazon" id="btn-amazon" onclick="redirect('amazon')">AMAZON</button>
+          <button class="btn btn-blinkit" id="btn-blinkit" onclick="redirect('blinkit')">BLINKIT</button>
+          <button class="btn btn-zomato" id="btn-zomato" onclick="redirect('zomato')">ZOMATO</button>
+          <button class="btn btn-full" id="btn-auto" onclick="redirect('auto')">AUTO ROUTE</button>
+          <button class="btn btn-wa btn-full" onclick="sendWa()">WHATSAPP</button>
+          <button class="btn btn-full" onclick="location.reload()">HOME</button>
+        </div>
+      </div>`;
+    } else {
+      let html = `<div class="slide-header"><span class="header-title">${escapeHTML(s.title)}</span><span class="header-badge">OPTIONS</span></div><div class="carousel-viewport">`;
+      (s.items || []).forEach((item, i) => {
+        html += `<div class="sub-slide ${i===0?'opt-active':'opt-hidden'}" data-val="${escapeHTML(item.name)}">
+          <div class="role-label">OPTION</div>
+          <h1>${escapeHTML(item.name)}</h1>
+          <div class="nav-hint"><span>UP: BACK</span><span style="color:var(--accent-go)">DOWN: SELECT</span></div>
+        </div>`;
+      });
+      html += `</div>`;
+      el.innerHTML = html;
+    }
+
+    container.appendChild(el);
+    slideElements.push(el);
+  });
+
+  goToSlide(2);
+}
+
+function calculateVerdict() {
+  const domain = ENGINE_STATE.cuisines_detected[0];
+  if(domain === "research") return null;
+
+  let DB = (domain === 'smartphones') ? PHONE_DATABASE : FOOD_DATABASE;
+  let scores = [];
+
+  for (let name in DB) {
+    let item = DB[name];
+    let score = 0;
+    for(let attr in item.attr) {
+      let w = ENGINE_STATE.session_weights[attr] || 0;
+      score += item.attr[attr] * w;
+    }
+    if(ENGINE_STATE.items_detected[name]) score += 10;
+    scores.push({name, score, price: item.price});
+  }
+  scores.sort((a, b) => b.score - a.score);
+  return scores[0];
+}
+
+function updateFinal() {
+  const list = document.getElementById('final-list');
+  if (!list) return;
+
+  const winner = calculateVerdict();
+
+  if (winner) {
+    list.innerHTML = `
+      <div class="context-panel" style="border-color: rgba(0,230,118,0.55)">
+        <div class="context-kicker" style="color:#00e676">TOP RECOMMENDATION</div>
+        <div style="font-size:1.35rem; font-weight:900; margin:6px 0 8px 0; color:#fff">${escapeHTML(winner.name)}</div>
+        <div style="color:#a8b3c2">Est. Price: ₹${winner.price}</div>
+      </div>`;
+    ENGINE_STATE.items_detected = {};
+    ENGINE_STATE.items_detected[winner.name] = {qty:1};
+  } else {
+    let html = "";
+    for(let k in ENGINE_STATE.items_detected) html += `<div class="input-row"><span class="input-key">${escapeHTML(k)}</span><span class="input-val">READY</span></div>`;
+    list.innerHTML = html || "Nothing Selected";
+  }
+
+  const mode = resolvePlatform();
+  const a = document.getElementById('btn-amazon');
+  const b = document.getElementById('btn-blinkit');
+  const z = document.getElementById('btn-zomato');
+  if(a) a.style.display = mode === 'amazon' ? 'block' : 'none';
+  if(b) b.style.display = mode === 'blinkit' ? 'block' : 'none';
+  if(z) z.style.display = mode === 'zomato' ? 'block' : 'none';
+}
+
+function resolvePlatform() {
+  const text = Object.keys(ENGINE_STATE.items_detected).join(" ").toLowerCase();
+  if (text.match(/iphone|samsung|phone|vivo|poco|iqoo|charger|buds|realme|xiaomi/)) return "amazon";
+  if (text.match(/coke|chips|lays|milk|maggi|notebook|pen|eggs|bread|kurkure/)) return "blinkit";
+  return "zomato";
+}
+
+function redirect(type) {
+  const item = Object.keys(ENGINE_STATE.items_detected)[0];
+  if(!item) return showToast("NOTHING SELECTED");
+
+  forceCopy(item);
+  showToast("LINK COPIED");
+
+  const autoMode = resolvePlatform();
+  const mode = type === 'auto' ? autoMode : type;
+  const target = DEEP_LINKS[mode];
+  const q = encodeURIComponent(item);
+
+  const start = Date.now();
+  window.location.href = target.app(q);
+  setTimeout(() => {
+    if (Date.now() - start < 2500) window.location.href = target.web(q);
+  }, 2000);
+}
+
+function sendWa() {
+  const items = Object.keys(ENGINE_STATE.items_detected).join(', ');
+  const text = encodeURIComponent(`DECISION: ${items}`);
+  window.open(`https://wa.me/?text=${text}`);
+}
+
+function forceCopy(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+  } else fallbackCopy(text);
+}
+function fallbackCopy(text) {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.style.position = "fixed";
+  textArea.style.left = "-9999px";
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  try { document.execCommand('copy'); } catch (err) {}
+  document.body.removeChild(textArea);
+}
+
+/* ---------- research branch UI ---------- */
 function renderSearchSlide() {
   const container = document.getElementById('master-container');
   while (container.children.length > 1) container.removeChild(container.lastChild);
@@ -934,8 +1310,14 @@ function renderSearchSlide() {
     <div class="source-toggle">${sourcesHtml}</div>
     <h1>TOPIC?</h1>
     <input type="text" id="search-input" placeholder="Enter topic...">
-    <button class="btn btn-auto btn-full" onclick="executeSearch()">SEARCH</button>
-    ${ENGINE_STATE.research_nodes.length > 0 ? '<button class="btn btn-pdf btn-full" onclick="generateResearchPDF()">📄 DOWNLOAD PDF</button>' : ''}
+    <button class="btn btn-full" onclick="executeSearch()">SEARCH</button>
+
+    ${ENGINE_STATE.research_nodes.length > 0 ? `
+      <button class="btn btn-pdf btn-full" onclick="generateResearchPDF()">📄 PDF (CLASSIC)</button>
+      <button class="btn btn-pro btn-full" onclick="generateResearchProUIPDF()">✨ PRO UI PDF</button>
+    ` : ''}
+
+    <button class="btn btn-full" onclick="location.reload()">HOME</button>
   </div>`;
 
   container.appendChild(section);
@@ -954,7 +1336,7 @@ function renderSearchSlide() {
 function setSource(src, btn) {
   WIKI_ENGINE.activeSource = src;
   document.querySelectorAll('.source-chip').forEach(c => c.classList.remove('active'));
-  btn.classList.add('active');
+  if (btn) btn.classList.add('active');
 
   const srcInfo = WIKI_ENGINE.sources[src];
   const input = document.getElementById('search-input');
@@ -962,7 +1344,8 @@ function setSource(src, btn) {
 }
 
 async function executeSearch() {
-  const query = document.getElementById('search-input').value.trim();
+  const input = document.getElementById('search-input');
+  const query = (input ? input.value : "").trim();
   if (!query) return showToast("ENTER TOPIC");
 
   const container = document.getElementById('master-container');
@@ -1133,7 +1516,8 @@ function buildResearchDeck(context) {
           ${noSummary ? `<button class="btn btn-full" onclick="openWikipedia('${escapeHTML(context.title)}')">OPEN ON WIKIPEDIA (FALLBACK)</button>` : ``}
         </div>
 
-        <button class="btn btn-pdf btn-full" onclick="generateResearchPDF()">📄 DOWNLOAD PDF (${ENGINE_STATE.research_nodes.length} NODES)</button>
+        <button class="btn btn-pro btn-full" onclick="generateResearchProUIPDF()">✨ PRO UI PDF</button>
+        <button class="btn btn-pdf btn-full" onclick="generateResearchPDF()">📄 PDF (CLASSIC) (${ENGINE_STATE.research_nodes.length} NODES)</button>
 
         <div class="nav-hint">
           <span>UP: BACK</span>
@@ -1187,9 +1571,11 @@ function showErrorSlide(message) {
 
   const errorSlide = document.createElement('section');
   errorSlide.className = "main-slide next";
-  errorSlide.innerHTML = `<div class="slide-header"><span class="header-title">ERROR</span></div>
+  errorSlide.innerHTML = `<div class="slide-header"><span class="header-title">ERROR</span><span class="header-badge">FIX</span></div>
     <div class="sub-slide static article-view">
-      <div class="error-box">${escapeHTML(message)}</div>
+      <div class="error-box">
+        ${escapeHTML(message)}
+      </div>
       <button class="btn btn-full" onclick="goToSlide(Math.max(0, currentIdx - 1))">GO BACK</button>
       <button class="btn btn-full" onclick="location.reload()">RESTART</button>
     </div>`;
@@ -1199,65 +1585,11 @@ function showErrorSlide(message) {
   goToSlide(slideElements.length - 1);
 }
 
-/* 🔴 STANDARD BRANCH (UNCHANGED) */
-function buildDeck() {
-  const container = document.getElementById('master-container');
-  while(container.children.length > 2) container.removeChild(container.lastChild);
-  slideElements = slideElements.slice(0, 2);
-
-  const domain = ENGINE_STATE.cuisines_detected[0];
-  const allCats = RAW_DATA[domain].categories;
-  const targetCats = allCats.filter(c => ENGINE_STATE.active_filters.includes(c.label));
-
-  let slides = [];
-  targetCats.forEach(cat => slides.push({ type:'opt', title: cat.label, items: cat.items, catType: cat.type }));
-  slides.push({ type:'final' });
-
-  slides.forEach((s) => {
-    const el = document.createElement('section');
-    el.className = `main-slide next`;
-    el.dataset.catType = s.catType;
-
-    if (s.type === 'final') {
-      el.innerHTML = `<div class="sub-slide static article-view"><div class="input-group" id="final-list"></div>
-        <div class="final-actions">
-          <button class="btn btn-amazon" id="btn-amazon" onclick="redirect('amazon')">AMAZON</button>
-          <button class="btn btn-blinkit" id="btn-blinkit" onclick="redirect('blinkit')">BLINKIT</button>
-          <button class="btn btn-zomato" id="btn-zomato" onclick="redirect('zomato')">ZOMATO</button>
-          <button class="btn btn-auto btn-full" id="btn-auto" onclick="redirect('auto')">AUTO ROUTE</button>
-          <button class="btn btn-wa btn-full" onclick="sendWa()">WHATSAPP</button>
-          <button class="btn btn-full" onclick="location.reload()">HOME</button>
-        </div></div>`;
-    } else {
-      let html = `<div class="slide-header"><span class="header-title">${escapeHTML(s.title)}</span></div><div class="carousel-viewport">`;
-      s.items.forEach((item, i) => {
-        html += `<div class="sub-slide ${i===0?'opt-active':'opt-hidden'}" data-val="${escapeHTML(item.name)}">
-          <div class="role-label">OPTION</div><h1>${escapeHTML(item.name)}</h1>
-          <div class="nav-hint"><span>UP: BACK</span><span style="color:var(--accent-go)">DOWN: SELECT</span></div></div>`;
-      });
-      html += `</div>`;
-      el.innerHTML = html;
-    }
-
-    container.appendChild(el);
-    slideElements.push(el);
-  });
-
-  goToSlide(2);
-}
-
-function resolvePlatform() {
-  const text = Object.keys(ENGINE_STATE.items_detected).join(" ").toLowerCase();
-  if (text.match(/iphone|samsung|phone|vivo|poco|iqoo|charger|buds|realme|xiaomi/)) return "amazon";
-  if (text.match(/coke|chips|lays|milk|maggi|notebook|pen|eggs|bread|kurkure/)) return "blinkit";
-  return "zomato";
-}
-
 /* =========================================
-   UX PHYSICS ENGINE
+   SWIPE + NAV ENGINE
    ========================================= */
 let touchStartX = 0, touchStartY = 0;
-let lockVerticalNav = false; // blocks slide vertical nav while scrolling in panels
+let lockVerticalNav = false;
 
 function initSwipeSystem() {
   const doc = document;
@@ -1269,7 +1601,6 @@ function initSwipeSystem() {
     touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
 
-    // ✅ block vertical navigation if touch begins inside scroll panels
     lockVerticalNav = !!e.target.closest('.wiki-summary, .takeaways');
   }, {passive:true});
 
@@ -1277,13 +1608,13 @@ function initSwipeSystem() {
     const view = e.target.closest('.carousel-viewport');
     if(!view) return;
 
-    // ✅ allow native scroll inside panels (no depth-fill, no preventDefault)
     if (lockVerticalNav) return;
 
     const dy = e.touches[0].clientY - touchStartY;
     if(dy > 0 && Math.abs(dy) > Math.abs(e.touches[0].clientX - touchStartX)) {
       if (e.cancelable) e.preventDefault();
-      document.getElementById('depth-fill').style.height = Math.min((dy/150)*100, 100) + '%';
+      const bar = document.getElementById('depth-fill');
+      if (bar) bar.style.height = Math.min((dy/150)*100, 100) + '%';
     }
   }, {passive:false});
 
@@ -1293,17 +1624,18 @@ function initSwipeSystem() {
 
     const dx = e.changedTouches[0].clientX - touchStartX;
     const dy = e.changedTouches[0].clientY - touchStartY;
-    document.getElementById('depth-fill').style.height = '0%';
 
-    // ✅ ignore slide nav gestures for panel scroll interactions
+    const bar = document.getElementById('depth-fill');
+    if (bar) bar.style.height = '0%';
+
     if (lockVerticalNav) {
       lockVerticalNav = false;
       return;
     }
 
     const mainSlide = view.closest('.main-slide');
-    const mode = mainSlide.dataset.mode;
-    const catType = mainSlide.dataset.catType;
+    const mode = mainSlide ? mainSlide.dataset.mode : "";
+    const catType = mainSlide ? mainSlide.dataset.catType : "";
 
     if(Math.abs(dy) > 80 && dy > 0) {
       const activeSub = view.querySelector('.sub-slide.opt-active') || view.querySelector('.sub-slide.static');
@@ -1342,115 +1674,79 @@ function initSwipeSystem() {
 
 function goToSlide(idx) {
   if(idx < 0 || idx >= slideElements.length) return;
-  slideElements[currentIdx].classList.replace('active', idx>currentIdx?'prev':'next');
+
+  const prev = slideElements[currentIdx];
+  if (prev) prev.classList.replace('active', idx>currentIdx ? 'prev' : 'next');
+
   currentIdx = idx;
-  slideElements[currentIdx].className = "main-slide active";
-  if(slideElements[currentIdx].querySelector('#final-list')) updateFinal();
+  const curr = slideElements[currentIdx];
+  if (curr) curr.className = "main-slide active";
+
+  if(curr && curr.querySelector && curr.querySelector('#final-list')) updateFinal();
 }
 
-function calculateVerdict() {
-  const domain = ENGINE_STATE.cuisines_detected[0];
-  if(domain === "research") return null;
-
-  let DB = (domain === 'smartphones') ? PHONE_DATABASE : FOOD_DATABASE;
-  let scores = [];
-
-  for (let name in DB) {
-    let item = DB[name];
-    let score = 0;
-    for(let attr in item.attr) {
-      let w = ENGINE_STATE.session_weights[attr] || 0;
-      score += item.attr[attr] * w;
-    }
-    if(ENGINE_STATE.items_detected[name]) score += 10;
-    scores.push({name, score, price: item.price});
-  }
-  scores.sort((a, b) => b.score - a.score);
-  return scores[0];
-}
-
-function updateFinal() {
-  const list = document.getElementById('final-list');
-  const winner = calculateVerdict();
-
-  if (winner) {
-    list.innerHTML = `
-      <div class="context-panel" style="border-color: rgba(0,230,118,0.55)">
-        <div class="context-kicker" style="color:#00e676">TOP RECOMMENDATION</div>
-        <div style="font-size:1.35rem; font-weight:900; margin:6px 0 8px 0; color:#fff">${escapeHTML(winner.name)}</div>
-        <div style="color:#a8b3c2">Est. Price: ₹${winner.price}</div>
-      </div>`;
-    ENGINE_STATE.items_detected = {};
-    ENGINE_STATE.items_detected[winner.name] = {qty:1};
-  } else {
-    let html = "";
-    for(let k in ENGINE_STATE.items_detected) html += `<div class="input-row"><span class="input-key">${escapeHTML(k)}</span><span class="input-val">READY</span></div>`;
-    list.innerHTML = html || "Nothing Selected";
-  }
-
-  const mode = resolvePlatform();
-  const a = document.getElementById('btn-amazon');
-  const b = document.getElementById('btn-blinkit');
-  const z = document.getElementById('btn-zomato');
-  if(a) a.style.display = mode === 'amazon' ? 'block' : 'none';
-  if(b) b.style.display = mode === 'blinkit' ? 'block' : 'none';
-  if(z) z.style.display = mode === 'zomato' ? 'block' : 'none';
-}
-
-function forceCopy(text) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
-  } else fallbackCopy(text);
-}
-
-function fallbackCopy(text) {
-  const textArea = document.createElement("textarea");
-  textArea.value = text;
-  textArea.style.position = "fixed";
-  textArea.style.left = "-9999px";
-  document.body.appendChild(textArea);
-  textArea.focus();
-  textArea.select();
-  try { document.execCommand('copy'); } catch (err) {}
-  document.body.removeChild(textArea);
-}
-
-function redirect(type) {
-  const item = Object.keys(ENGINE_STATE.items_detected)[0];
-  if(!item) return showToast("NOTHING SELECTED");
-
-  forceCopy(item);
-  showToast("LINK COPIED");
-
-  const autoMode = resolvePlatform();
-  const mode = type === 'auto' ? autoMode : type;
-  const target = DEEP_LINKS[mode];
-  const q = encodeURIComponent(item);
-
-  const start = Date.now();
-  window.location.href = target.app(q);
-  setTimeout(() => {
-    if (Date.now() - start < 2500) window.location.href = target.web(q);
-  }, 2000);
-}
-
-function sendWa() {
-  const items = Object.keys(ENGINE_STATE.items_detected).join(', ');
-  const text = encodeURIComponent(`DECISION: ${items}`);
-  window.open(`https://wa.me/?text=${text}`);
-}
-
+/* ---------- toast + voice stubs ---------- */
 function showToast(m) {
   const t = document.getElementById('toast');
+  if (!t) return;
   t.innerText = m;
   t.classList.add('visible');
   setTimeout(() => t.classList.remove('visible'), 1800);
 }
-
 function toggleListenMode() { showToast("VOICE: NOT IMPLEMENTED"); }
-function initVoice() {}
+function initVoice() {} // safe stub
 
-boot();
-</script>
+/* =========================================
+   NEVER-BLANK CRASH GUARD + SAFE BOOT
+   ========================================= */
+function showCrash(errText){
+  const container = document.getElementById("master-container");
+  if (!container) return;
+  container.innerHTML = `
+    <section class="main-slide active">
+      <div class="slide-header">
+        <span class="header-title">DECIDE OS</span>
+        <span class="header-badge">CRASH</span>
+      </div>
+      <div class="sub-slide static article-view">
+        <div class="error-box">
+          <div style="font-family:var(--font-tech); font-size:0.75rem; font-weight:900; margin-bottom:10px;">
+            SCRIPT ERROR
+          </div>
+          <div style="white-space:pre-wrap; font-family:var(--font-tech); font-size:0.75rem; line-height:1.5;">
+${escapeHTML(errText)}
+          </div>
+        </div>
+        <button class="btn btn-full" onclick="location.reload()">RELOAD</button>
+      </div>
+    </section>
+  `;
+}
+
+window.addEventListener("error", (e) => {
+  const msg = `${e.message}\n${e.filename || ""}:${e.lineno || ""}:${e.colno || ""}`;
+  showCrash(msg);
+});
+
+window.addEventListener("unhandledrejection", (e) => {
+  const msg = (e.reason && (e.reason.stack || e.reason.message)) ? (e.reason.stack || e.reason.message) : String(e.reason);
+  showCrash("Unhandled Promise Rejection:\n" + msg);
+});
+
+function safeBoot(){
+  try {
+    if (typeof renderLobby !== "function") throw new Error("renderLobby() missing");
+    if (typeof initSwipeSystem !== "function") throw new Error("initSwipeSystem() missing");
+
+    renderLobby();
+    initVoice();
+    initSwipeSystem();
+  } catch (e) {
+    showCrash(e.stack || e.message || String(e));
+  }
+}
+
+safeBoot();
+  </script>
 </body>
 </html>

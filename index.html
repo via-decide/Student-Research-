@@ -24,9 +24,8 @@
   <style>
     :root {
       --brand-orange: #ff671f;
-      /* Slightly lighter background and brighter text for improved contrast */
-      --brand-bg: #0e0e0e;
-      --text-main: #fafafa;
+      --brand-bg: #0a0a0a;
+      --text-main: #f0f0f0;
       --accent-go: #00e676;
       --accent-skip: #ff3333;
       --accent-zomato: #cb202d;
@@ -65,10 +64,9 @@
     .main-slide.active { transform: translateY(0); z-index: 10; }
     .main-slide.next { transform: translateY(100%); z-index: 20; }
     .slide-header {
-      /* Increase header padding and height for breathing room */
-      padding: 20px 24px;
-      border-left: 4px solid var(--brand-orange);
-      height: 72px;
+      padding: 18px 20px;
+      border-left: 3px solid var(--brand-orange);
+      height: 66px;
       flex-shrink: 0;
       z-index: 10;
       display: flex;
@@ -79,8 +77,7 @@
     }
     .header-title {
       font-family: var(--font-tech);
-      /* Increase header title size for better legibility */
-      font-size: 0.9rem;
+      font-size: 0.75rem;
       color: var(--brand-orange);
       letter-spacing: 1px;
       font-weight: 700;
@@ -122,11 +119,10 @@
       color: var(--brand-orange);
     }
     .primary-question {
-      /* Larger question text and improved line-height for readability */
-      font-size: 1.2rem;
-      color: var(--text-main);
-      margin-bottom: 18px;
-      line-height: 1.6;
+      font-size: 1.05rem;
+      color: #fff;
+      margin-bottom: 16px;
+      line-height: 1.45;
       font-weight: 600;
     }
     .context-panel{
@@ -258,16 +254,10 @@
     }
     .lobby-container { display:flex; flex-direction:column; gap:15px; padding:30px; height:100%; justify-content:center; }
     .cuisine-btn {
-      /* Improved button styling: slightly lighter background, clearer border, larger padding and font */
-      background:#1c1c1c;
-      border:1px solid #444;
-      color:#e0e0e0;
-      padding:22px;
-      font-size:1.15rem;
-      font-weight:800;
-      text-transform:uppercase;
-      border-radius:16px;
-      transition:background 0.2s, color 0.2s, border-color 0.2s;
+      background:#161616; border:1px solid #2a3342; color:#c0c7d6;
+      padding:18px; font-size:1.05rem;
+      font-weight:800; text-transform:uppercase; border-radius:14px;
+      transition:all 0.2s;
     }
     .cuisine-btn.selected { background: var(--brand-orange); color:#000; border-color: var(--brand-orange); }
     #search-input {
@@ -404,7 +394,7 @@
     .proui-list li{ margin:6px 0; }
     .proui-nodeTitle{ font-size:18px; font-weight:900; margin:0; color:#a78bfa; }
     .proui-small{ font-size:12px; color: rgba(255,255,255,.70); line-height:1.5; }
-  
+
     /* ===== Quick Panel (new) ===== */
     #panel-toggle{
       position: fixed;
@@ -540,7 +530,6 @@
       align-items:center;
     }
 
-  
 
     /* ===== Notes Panel (new) ===== */
     #notes-toggle{
@@ -635,7 +624,7 @@
       text-transform: uppercase;
       letter-spacing: 0.6px;
     }
-</style>
+  </style>
 </head>
 <body>
   <div id="master-container"></div>
@@ -873,18 +862,6 @@ function updateUIPanel(){
     hintEl.textContent = isUIPanelOpen() ? "Tap outside to close" : "Ready";
   }
 }
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    if (typeof isNotesPanelOpen === 'function' && isNotesPanelOpen()) closeNotesPanel();
-    if (typeof isUIPanelOpen === 'function' && isUIPanelOpen()) closeUIPanel();
-  }
-});
-setInterval(() => {
-  // Keep clock + stats fresh without touching core engine logic
-  if (document.getElementById('ui-panel')) updateUIPanel();
-}, 1200);
-
-
 
 /* ---------- Notes Panel (new) ---------- */
 const NOTES_KEY = "decide_engine_notes_v1";
@@ -970,6 +947,19 @@ function clearNotes(){
 document.addEventListener('input', (e) => {
   if (e && e.target && e.target.id === 'notes-text') updateNotesMeta();
 });
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (typeof isNotesPanelOpen === 'function' && isNotesPanelOpen()) closeNotesPanel();
+    if (typeof isUIPanelOpen === 'function' && isUIPanelOpen()) closeUIPanel();
+  }
+});
+setInterval(() => {
+  // Keep clock + stats fresh without touching core engine logic
+  if (document.getElementById('ui-panel')) updateUIPanel();
+  if (document.getElementById('notes-panel')) updateNotesMeta();
+}, 1200);
+
 /* confidence helper based on source */
 function confidenceFor(source) {
   // simple rules: wiki/wikivoyage high, wikibooks medium, wikinews low
@@ -1311,7 +1301,7 @@ async function generateResearchPDF() {
 }
 
 /* =========================================
-   DECISION PRO UI PDF (custom) 
+   DECISION PRO UI PDF (custom)
    ========================================= */
 // Build model for decision PDF
 function buildDecisionProModel() {
@@ -1630,291 +1620,198 @@ function toggleFilter(label, idx) {
 }
 function startHunt() {
   if (ENGINE_STATE.active_filters.length === 0) return showToast("SELECT AT LEAST ONE");
-  ENGINE_STATE.session_weights = { camera:0.1, gaming:0.1, battery:0.1, ui:0.1, anc:0.1, sound:0.1, mic:0.1, latency:0.1, comfort:0.1, health:0.1, spice:0.1, speed:0.1, protein:0.1, heaviness:0.1, shareability:0.1 };
-  buildDeck();
-}
-function buildDeck() {
-  const container = document.getElementById('master-container');
-  while(container.children.length > 2) container.removeChild(container.lastChild);
-  slideElements = slideElements.slice(0, 2);
-  const domain = ENGINE_STATE.cuisines_detected[0];
-  const allCats = RAW_DATA[domain].categories || [];
-  const targetCats = allCats.filter(c => ENGINE_STATE.active_filters.includes(c.label));
-  let slides = [];
-  targetCats.forEach(cat => slides.push({ type:'opt', title: cat.label, items: cat.items, catType: cat.type }));
-  slides.push({ type:'final' });
-  slides.forEach((s) => {
-    const el = document.createElement('section');
-    el.className = `main-slide next`;
-    el.dataset.catType = s.catType || "";
-    if (s.type === 'final') {
-      el.innerHTML = `<div class="slide-header"><span class="header-title">FINAL</span><span class="header-badge">OUTPUT</span></div>
-      <div class="sub-slide static article-view">
-        <div class="input-group" id="final-list"></div>
-        <div class="final-actions">
-          <button class="btn btn-amazon" id="btn-amazon" onclick="redirect('amazon')">AMAZON</button>
-          <button class="btn btn-blinkit" id="btn-blinkit" onclick="redirect('blinkit')">BLINKIT</button>
-          <button class="btn btn-zomato" id="btn-zomato" onclick="redirect('zomato')">ZOMATO</button>
-          <button class="btn btn-full" id="btn-auto" onclick="redirect('auto')">AUTO ROUTE</button>
-          <button class="btn btn-wa btn-full" onclick="sendWa()">WHATSAPP</button>
-          <button class="btn btn-full" onclick="location.reload()">HOME</button>
-        </div>
-      </div>`;
-    } else {
-      let html = `<div class="slide-header"><span class="header-title">${escapeHTML(s.title)}</span><span class="header-badge">OPTIONS</span></div><div class="carousel-viewport">`;
-      (s.items || []).forEach((item, i) => {
-        html += `<div class="sub-slide ${i===0?'opt-active':'opt-hidden'}" data-val="${escapeHTML(item.name)}">
-          <div class="role-label">OPTION</div>
-          <h1>${escapeHTML(item.name)}</h1>
-          <div class="nav-hint"><span>UP: BACK</span><span style="color:var(--accent-go)">DOWN: SELECT</span></div>
-        </div>`;
+  ENGINE_STATE.session_weights = { camera:0.1, gaming:0.1, battery:0.1, ui:0.1, anc:0.1, sound:0.1, mic:0.1, latency:0.1, comfort:0.1,
+    heaviness:0.1, speed:0.1, health:0.1 };
+  // apply filters weights
+  ENGINE_STATE.active_filters.forEach(f => {
+    const key = f.toLowerCase();
+    if (CATEGORY_VECTORS[key]) {
+      Object.entries(CATEGORY_VECTORS[key]).forEach(([k,v]) => {
+        ENGINE_STATE.session_weights[k] = (ENGINE_STATE.session_weights[k] || 0) + v;
       });
-      html += `</div>`;
-      el.innerHTML = html;
     }
-    container.appendChild(el);
-    slideElements.push(el);
   });
-  goToSlide(2);
-}
-function calculateVerdict() {
   const domain = ENGINE_STATE.cuisines_detected[0];
-  if(domain === "research") return null;
-  let DB = (domain === 'smartphones') ? PHONE_DATABASE : FOOD_DATABASE;
-  let scores = [];
-  for (let name in DB) {
-    let item = DB[name];
+  const items = domain === 'food' ? FOOD_DATABASE : PHONE_DATABASE;
+  const ranked = rankItems(items, ENGINE_STATE.session_weights);
+  ENGINE_STATE.items_detected = ranked;
+  renderFinalSlide(domain, ranked);
+}
+function rankItems(db, weights) {
+  const scored = [];
+  Object.keys(db).forEach(name => {
+    const item = db[name];
     let score = 0;
-    for(let attr in item.attr) {
-      let w = ENGINE_STATE.session_weights[attr] || 0;
-      score += item.attr[attr] * w;
-    }
-    if(ENGINE_STATE.items_detected[name]) score += 10;
-    scores.push({name, score, price: item.price});
-  }
-  scores.sort((a, b) => b.score - a.score);
-  return scores[0];
+    Object.keys(weights).forEach(k => {
+      const w = weights[k] || 0;
+      const val = item.attr[k] || 0;
+      score += w * val;
+    });
+    scored.push({ name, ...item, score });
+  });
+  scored.sort((a,b) => b.score - a.score);
+  return scored;
 }
-function updateFinal() {
-  const list = document.getElementById('final-list');
-  if (!list) return;
-  const winner = calculateVerdict();
-  if (winner) {
-    list.innerHTML = `
-      <div class="context-panel" style="border-color: rgba(0,230,118,0.55)">
-        <div class="context-kicker" style="color:#00e676">TOP RECOMMENDATION</div>
-        <div style="font-size:1.35rem; font-weight:900; margin:6px 0 8px 0; color:#fff">${escapeHTML(winner.name)}</div>
-        <div style="color:#a8b3c2">Est. Price: ₹${winner.price}</div>
-      </div>`;
-    ENGINE_STATE.items_detected = {};
-    ENGINE_STATE.items_detected[winner.name] = {qty:1};
-  } else {
-    let html = "";
-    for(let k in ENGINE_STATE.items_detected) html += `<div class="input-row"><span class="input-key">${escapeHTML(k)}</span><span class="input-val">READY</span></div>`;
-    list.innerHTML = html || "Nothing Selected";
-  }
-  const mode = resolvePlatform();
-  const a = document.getElementById('btn-amazon');
-  const b = document.getElementById('btn-blinkit');
-  const z = document.getElementById('btn-zomato');
-  if(a) a.style.display = mode === 'amazon' ? 'block' : 'none';
-  if(b) b.style.display = mode === 'blinkit' ? 'block' : 'none';
-  if(z) z.style.display = mode === 'zomato' ? 'block' : 'none';
+function updateFinal(){
+  // safe stub: can be expanded
 }
-function resolvePlatform() {
-  const text = Object.keys(ENGINE_STATE.items_detected).join(" ").toLowerCase();
-  if (text.match(/iphone|samsung|phone|vivo|poco|iqoo|charger|buds|realme|xiaomi/)) return "amazon";
-  if (text.match(/coke|chips|lays|milk|maggi|notebook|pen|eggs|bread|kurkure/)) return "blinkit";
-  return "zomato";
-}
-function redirect(type) {
-  const item = Object.keys(ENGINE_STATE.items_detected)[0];
-  if(!item) return showToast("NOTHING SELECTED");
-  forceCopy(item);
-  showToast("LINK COPIED");
-  const autoMode = resolvePlatform();
-  const mode = type === 'auto' ? autoMode : type;
-  const target = DEEP_LINKS[mode];
-  const q = encodeURIComponent(item);
-  const start = Date.now();
-  window.location.href = target.app(q);
-  setTimeout(() => {
-    if (Date.now() - start < 2500) window.location.href = target.web(q);
-  }, 2000);
-}
-function sendWa() {
-  const items = Object.keys(ENGINE_STATE.items_detected).join(', ');
-  const text = encodeURIComponent(`DECISION: ${items}`);
-  window.open(`https://wa.me/?text=${text}`);
-}
-function forceCopy(text) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
-  } else fallbackCopy(text);
-}
-function fallbackCopy(text) {
-  const textArea = document.createElement("textarea");
-  textArea.value = text;
-  textArea.style.position = "fixed";
-  textArea.style.left = "-9999px";
-  document.body.appendChild(textArea);
-  textArea.focus();
-  textArea.select();
-  try { document.execCommand('copy'); } catch (err) {}
-  document.body.removeChild(textArea);
-}
-
-/* ---------- DECISION RESEARCH UI ---------- */
-function renderSearchSlide() {
+function renderFinalSlide(domain, ranked) {
   const container = document.getElementById('master-container');
-  while (container.children.length > 1) container.removeChild(container.lastChild);
-  slideElements = [slideElements[0]];
   const section = document.createElement('section');
   section.className = "main-slide next";
-  let sourcesHtml = '';
-  for (let key in WIKI_ENGINE.sources) {
-    const src = WIKI_ENGINE.sources[key];
-    const active = key === WIKI_ENGINE.activeSource ? 'active' : '';
-    sourcesHtml += `<span class="source-chip ${active}" onclick="setSource('${key}', this)" title="${escapeHTML(src.description)}">${src.icon} ${escapeHTML(src.name)}</span>`;
-  }
-  section.innerHTML = `<div class="slide-header">
-    <span class="header-title">DECISION RESEARCH</span>
-    <span class="header-badge">NODES: ${ENGINE_STATE.research_nodes.length}</span>
-  </div>
-  <div class="lobby-container">
-    <div class="source-toggle">${sourcesHtml}</div>
-    <h1>TOPIC?</h1>
-    <input type="text" id="search-input" placeholder="Enter topic...">
-    <button class="btn btn-full" onclick="executeSearch()">SEARCH</button>
-    ${ENGINE_STATE.research_nodes.length > 0 ? `
-      <button class="btn btn-pdf btn-full" onclick="safeCall('generateResearchPDF')">📄 PDF (CLASSIC)</button>
-      <button class="btn btn-pro btn-full" onclick="safeCall('generateDecisionProUIPDF')">🚀 DECISION PDF</button>
-      <button class="btn btn-full" onclick="safeCall('openSynthesisSlide')">SYNTHESIS</button>
-    ` : ''}
-    <button class="btn btn-full" onclick="location.reload()">HOME</button>
+  const title = domain === 'food' ? "FINAL RECO" : "PHONE RECO";
+  let html = `<div class="slide-header"><span class="header-title">RESULT</span><span class="header-badge">${domain.toUpperCase()}</span></div>
+  <div class="sub-slide static article-view">
+    <h1>${title}</h1>
+    <div id="final-list" class="input-group">`;
+  ranked.slice(0,5).forEach((it, idx) => {
+    html += `<div class="input-row"><div class="input-key">#${idx+1} ${escapeHTML(it.name)}</div><div class="input-val">${Math.round(it.score*10)/10}</div></div>`;
+  });
+  html += `</div>
+    <div class="final-actions">
+      <button class="btn btn-full btn-yt" onclick="openYouTubeSearch('${escapeHTML(ranked[0]?.name || '')}')">YOUTUBE</button>
+      <button class="btn btn-amazon" onclick="window.open('${generateAmazonBookLink(domain)}','_blank')">AMAZON</button>
+      <button class="btn btn-wa" onclick="shareWhatsApp()">WHATSAPP</button>
+    </div>
   </div>`;
+  section.innerHTML = html;
   container.appendChild(section);
   slideElements.push(section);
-  goToSlide(1);
-  setTimeout(() => {
-    const input = document.getElementById('search-input');
-    if (input) {
-      input.focus();
-      input.addEventListener('keypress', (e) => { if (e.key === 'Enter') executeSearch(); });
-    }
-  }, 80);
-}
-function setSource(src, btn) {
-  WIKI_ENGINE.activeSource = src;
-  document.querySelectorAll('.source-chip').forEach(c => c.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  const srcInfo = WIKI_ENGINE.sources[src];
-  const input = document.getElementById('search-input');
-  if (input) input.placeholder = `${srcInfo.icon} ${srcInfo.description}...`;
-}
-async function executeSearch() {
-  const input = document.getElementById('search-input');
-  const query = (input ? input.value : "").trim();
-  if (!query) return showToast("ENTER TOPIC");
-  const container = document.getElementById('master-container');
-  const loadingSlide = document.createElement('section');
-  loadingSlide.className = "main-slide next";
-  loadingSlide.innerHTML = `<div class="slide-header"><span class="header-title">SEARCHING...</span></div>
-    <div class="sub-slide static">
-      <div class="loading-indicator">
-        <div class="loading-spinner"></div>
-        <p>Searching ${escapeHTML(WIKI_ENGINE.sources[WIKI_ENGINE.activeSource].name)}...</p>
-      </div>
-    </div>`;
-  container.appendChild(loadingSlide);
-  slideElements.push(loadingSlide);
   goToSlide(slideElements.length - 1);
-  try {
-    const results = await WIKI_ENGINE.search(query);
-    if (!results || results.length === 0) return showErrorSlide("No results found. Try different keywords or switch sources.");
-    buildSearchResults(results);
-  } catch (error) {
-    console.error('Search error:', error);
-    showErrorSlide("Search failed. Please check your connection and try again.");
-  }
 }
-function buildSearchResults(results) {
+function shareWhatsApp(){
+  const top = ENGINE_STATE.items_detected?.[0]?.name || "Recommendation";
+  const msg = encodeURIComponent(`decide.engine recommends: ${top}`);
+  window.open(`https://wa.me/?text=${msg}`, "_blank");
+}
+
+/* =========================================
+   DECISION RESEARCH BRANCH
+   ========================================= */
+function renderSearchSlide() {
   const container = document.getElementById('master-container');
-  if (slideElements.length > 2) {
-    container.removeChild(container.lastChild);
-    slideElements.pop();
-  }
-  const resultsSlide = document.createElement('section');
-  resultsSlide.className = "main-slide next";
-  resultsSlide.dataset.mode = "research";
-  let html = `<div class="slide-header">
-    <span class="header-title">RESULTS</span>
-    <span class="header-badge">${results.length} FOUND</span>
-  </div><div class="carousel-viewport">`;
-  results.forEach((result, i) => {
-    html += `<div class="sub-slide ${i === 0 ? 'opt-active' : 'opt-hidden'}" data-val="${escapeHTML(result.title)}">
-      <div class="role-label">${WIKI_ENGINE.sources[WIKI_ENGINE.activeSource].icon} ${escapeHTML(WIKI_ENGINE.sources[WIKI_ENGINE.activeSource].name)}</div>
-      <h1>${escapeHTML(result.title)}</h1>
-      <div class="primary-question">${escapeHTML(result.description || 'Swipe down to view details')}</div>
-      <div class="nav-hint">
-        <span>&larr; MORE RESULTS</span>
-        <span style="color:var(--accent-go)">DOWN: OPEN</span>
-      </div>
-    </div>`;
+  container.innerHTML = "";
+  const section = document.createElement('section');
+  section.className = "main-slide active";
+  section.dataset.mode = "research-search";
+  section.innerHTML = `
+    <div class="slide-header">
+      <span class="header-title">DECISION RESEARCH</span>
+      <span class="header-badge">SEARCH</span>
+    </div>
+    <div class="sub-slide static article-view">
+      <h1>Search a topic</h1>
+      <div class="primary-question">Build a decision-linked research journey across sources.</div>
+      <input id="search-input" placeholder="Type a topic (e.g. Stoicism, Protein, Goa)" />
+      <div class="source-toggle" id="source-toggle"></div>
+      <button class="btn btn-full" onclick="handleSearch()">SEARCH →</button>
+      <div class="nav-hint"><span>Swipe up/down: slides</span><span>Tap ☰: panel</span></div>
+    </div>
+  `;
+  container.appendChild(section);
+  slideElements = [section];
+  currentIdx = 0;
+  renderSourceToggle();
+}
+function renderSourceToggle(){
+  const el = document.getElementById("source-toggle");
+  if(!el) return;
+  el.innerHTML = "";
+  Object.keys(WIKI_ENGINE.sources).forEach(key => {
+    const s = WIKI_ENGINE.sources[key];
+    const chip = document.createElement("div");
+    chip.className = "source-chip" + (WIKI_ENGINE.activeSource === key ? " active" : "");
+    chip.textContent = `${s.icon} ${s.name}`;
+    chip.onclick = () => {
+      WIKI_ENGINE.activeSource = key;
+      renderSourceToggle();
+      showToast(`${s.name} SELECTED`);
+      updateUIPanel();
+    };
+    el.appendChild(chip);
   });
-  html += `</div>`;
-  resultsSlide.innerHTML = html;
-  container.appendChild(resultsSlide);
-  slideElements.push(resultsSlide);
-  goToSlide(slideElements.length - 1);
 }
-async function loadArticleDetails(title) {
-  const container = document.getElementById('master-container');
-  const loadingSlide = document.createElement('section');
-  loadingSlide.className = "main-slide next";
-  loadingSlide.innerHTML = `<div class="slide-header"><span class="header-title">LOADING...</span></div>
-    <div class="sub-slide static">
-      <div class="loading-indicator">
-        <div class="loading-spinner"></div>
-        <p>Extracting context...</p>
-      </div>
-    </div>`;
-  container.appendChild(loadingSlide);
-  slideElements.push(loadingSlide);
-  goToSlide(slideElements.length - 1);
-  try {
-    const context = await WIKI_ENGINE.getContext(title);
-    if (!context) return showErrorSlide("Failed to load article. Please try again.");
-    // store in history but not push to research_nodes yet
-    ENGINE_STATE.research_history.push({ title: context.title, source: context.source, timestamp: Date.now() });
-    // hold current context for meta capture
-    currentDecisionContext = context;
-    container.removeChild(container.lastChild);
-    slideElements.pop();
-    buildDecisionMetaSlide(context);
-  } catch (error) {
-    console.error('Load error:', error);
-    showErrorSlide("Failed to load article. Please try again.");
+async function handleSearch() {
+  const input = document.getElementById('search-input');
+  const q = input?.value?.trim();
+  if (!q) return showToast("TYPE SOMETHING");
+  showToast("SEARCHING...");
+  const results = await WIKI_ENGINE.search(q, WIKI_ENGINE.activeSource);
+  if (!results || results.length === 0) {
+    showToast("NO RESULTS");
+    return;
   }
+  renderResultsSlide(q, results);
 }
-/* Decision meta capture slide */
-function buildDecisionMetaSlide(context) {
+function renderResultsSlide(query, results) {
+  const container = document.getElementById('master-container');
+  const section = document.createElement('section');
+  section.className = "main-slide next";
+  section.dataset.mode = "research-results";
+  const src = WIKI_ENGINE.sources[WIKI_ENGINE.activeSource];
+  let html = `<div class="slide-header">
+      <span class="header-title">RESULTS</span>
+      <span class="header-badge">${src.name}</span>
+    </div>
+    <div class="sub-slide static article-view">
+      <h1>${escapeHTML(query)}</h1>
+      <div class="primary-question">Select a node to start your research journey.</div>
+      <div style="display:grid; gap:10px;">`;
+  results.forEach((r, idx) => {
+    html += `<button class="cuisine-btn" onclick="openResult('${escapeHTML(r.title)}')">${idx+1}. ${escapeHTML(r.title)}</button>`;
+  });
+  html += `</div>
+      <div style="height:14px"></div>
+      <button class="btn btn-full" onclick="renderSearchSlide()">← BACK</button>
+      <div class="nav-hint"><span>Swipe up/down: slides</span><span>Tap ☰: panel</span></div>
+    </div>`;
+  section.innerHTML = html;
+  container.appendChild(section);
+  slideElements.push(section);
+  goToSlide(slideElements.length - 1);
+}
+async function openResult(title) {
+  showToast("LOADING...");
+  const ctx = await WIKI_ENGINE.getContext(title, WIKI_ENGINE.activeSource);
+  if (!ctx) return showToast("FAILED");
+  // Hold context until meta capture (decision linkage)
+  currentDecisionContext = {
+    title: ctx.title,
+    summary: ctx.summary,
+    url: ctx.url,
+    thumbnail: ctx.thumbnail,
+    categories: ctx.categories || [],
+    links: ctx.links || [],
+    source: ctx.source,
+    sourceName: ctx.sourceName,
+    confidence: ctx.confidence,
+    decisionMeta: {}
+  };
+  // Ask for decision meta before building deck
+  renderDecisionMetaSlide(currentDecisionContext);
+}
+function renderDecisionMetaSlide(ctx){
   const container = document.getElementById('master-container');
   const metaSlide = document.createElement('section');
   metaSlide.className = "main-slide next";
-  metaSlide.dataset.mode = "decision";
-  const defaultDec = context.decisionMeta || {};
-  metaSlide.innerHTML = `<div class="slide-header"><span class="header-title">NODE META</span><span class="header-badge">${escapeHTML(context.sourceName)}</span></div>
+  metaSlide.dataset.mode = "decision-meta";
+  const defaultDec = ctx.decisionMeta || {};
+  metaSlide.innerHTML = `
+    <div class="slide-header">
+      <span class="header-title">DECISION META</span>
+      <span class="header-badge">LINK</span>
+    </div>
     <div class="sub-slide static article-view">
-      <h1>${escapeHTML(context.title)}</h1>
+      <h1>Link this node</h1>
+      <div class="primary-question">Capture the decision context that this research supports.</div>
       <div class="context-panel">
-        <div class="section-title">Decision Link</div>
-        <div style="display:grid; gap:12px;">
-          <div><input id="meta-decision" type="text" placeholder="What decision is this informing?" value="${escapeHTML(defaultDec.decision || '')}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;"></div>
+        <div class="section-title" style="margin-top:0">Decision context</div>
+        <div style="display:grid; gap:10px;">
+          <div><input id="meta-decision" type="text" placeholder="Decision (e.g. cut sugar, choose phone)" value="${escapeHTML(defaultDec.decision || '')}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;"></div>
           <div><input id="meta-time" type="text" placeholder="Time horizon" value="${escapeHTML(defaultDec.time || '')}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;"></div>
-          <div><input id="meta-stake" type="text" placeholder="Stake / capital at risk" value="${escapeHTML(defaultDec.stake || '')}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;"></div>
+          <div><input id="meta-stake" type="text" placeholder="Stake" value="${escapeHTML(defaultDec.stake || '')}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;"></div>
           <div><input id="meta-success" type="text" placeholder="Success metric" value="${escapeHTML(defaultDec.success || '')}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;"></div>
-          <div><input id="meta-options" type="text" placeholder="Option set (e.g., A/B/C)" value="${escapeHTML(defaultDec.options || '')}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;"></div>
+          <div><input id="meta-options" type="text" placeholder="Option set (e.g. A/B/C)" value="${escapeHTML(defaultDec.options || '')}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;"></div>
         </div>
       </div>
       <div class="final-actions">
@@ -1954,127 +1851,137 @@ function skipDecisionMeta() {
   slideElements.pop();
   buildResearchDeck(ENGINE_STATE.research_nodes[ENGINE_STATE.research_nodes.length - 1]);
 }
-/* Research deck page (unchanged except confidence display) */
-function buildResearchDeck(context) {
+function buildResearchDeck(node){
+  // Clear existing slides beyond search
   const container = document.getElementById('master-container');
-  const sumSlide = document.createElement('section');
-  sumSlide.className = "main-slide next";
-  sumSlide.dataset.mode = "research";
-  let metaHtml = '';
-  if (context.categories && context.categories.length > 0) {
-    metaHtml = '<div class="wiki-meta">' + context.categories.map(cat => `<span class="meta-chip">${escapeHTML(cat)}</span>`).join('') + '</div>';
+  while (container.children.length > 0) container.removeChild(container.lastChild);
+  slideElements = [];
+  // Rebuild: node view + related links deck
+  renderNodeSlide(node);
+  if (node.links && node.links.length) {
+    node.links.slice(0, 10).forEach(l => {
+      renderLinkSlide(l.name);
+    });
   }
-  const wc = wordCount(context.summary);
-  const rt = readingTimeMins(wc);
-  const takeaways = extractTakeaways(context.summary, 4);
-  const noSummary = isNoSummary(context.summary);
-  const bookLink = generateAmazonBookLink(context.title);
-  const thumbHTML = context.thumbnail ? `<div class="thumb"><img src="${context.thumbnail}" alt="thumb"></div>` : `<div class="thumb">NO IMG</div>`;
-  sumSlide.innerHTML = `<div class="slide-header">
-    <span class="header-title">ARTICLE</span>
-    <span class="header-badge">${escapeHTML(context.sourceName)} (${context.confidence})</span>
-  </div>
-  <div class="carousel-viewport">
+  // Add synthesis editor slide at end
+  renderEndSlide();
+  goToSlide(0);
+  updateUIPanel();
+}
+function renderNodeSlide(node){
+  const container = document.getElementById('master-container');
+  const section = document.createElement('section');
+  section.className = "main-slide active";
+  section.dataset.mode = "node";
+  const words = wordCount(node.summary || "");
+  const rt = readingTimeMins(words);
+  const takeaways = extractTakeaways(node.summary || "", 4);
+  const cats = (node.categories || []).slice(0,5);
+  section.innerHTML = `
+    <div class="slide-header">
+      <span class="header-title">NODE</span>
+      <span class="header-badge">${escapeHTML(node.sourceName || '').toUpperCase()}</span>
+    </div>
     <div class="sub-slide static article-view">
       <div class="context-panel">
         <div class="context-top">
-          ${thumbHTML}
+          <div class="thumb">${node.thumbnail ? `<img src="${node.thumbnail}" alt="">` : 'THUMB'}</div>
           <div class="context-title-wrap">
-            <div class="context-kicker">${WIKI_ENGINE.sources[context.source].icon} ${escapeHTML(context.sourceName)}</div>
-            <h1 style="margin:0 0 6px 0">${escapeHTML(context.title)}</h1>
+            <div class="context-kicker">Research node • Confidence: ${escapeHTML(node.confidence || '')}</div>
+            <h1 style="margin-bottom:6px;">${escapeHTML(node.title)}</h1>
             <div class="context-stats">
-              <span class="stat-chip">${wc} words</span>
-              <span class="stat-chip">~${rt} min read</span>
-              <span class="stat-chip">${ENGINE_STATE.research_nodes.length} nodes saved</span>
-              <span class="stat-chip">Confidence: ${context.confidence}</span>
+              <span class="stat-chip">${words} words</span>
+              <span class="stat-chip">${rt} min read</span>
+              <span class="stat-chip">${escapeHTML(node.sourceName || '')}</span>
             </div>
           </div>
         </div>
-        ${metaHtml}
-      </div>
-      ${noSummary ? `
-        <div class="takeaways">
-          <div class="section-title">No intro summary found</div>
-          <div style="color:#d6dde8; line-height:1.6; font-size:0.95rem;">
-            This source doesn’t provide an extract preview.
-            <ul style="margin:10px 0 0 18px;">
-              <li>Read the full article</li>
-              <li>Watch a YouTube explanation</li>
-              <li>Open the topic on Wikipedia (fallback)</li>
-            </ul>
-          </div>
+        <div class="wiki-meta">
+          ${cats.map(c => `<span class="meta-chip">${escapeHTML(c)}</span>`).join("")}
         </div>
-      ` : `
+        <div class="section-title">Key takeaways</div>
         <div class="takeaways">
-          <div class="section-title">Key takeaways</div>
-          <ul>${takeaways.map(t => `<li>${escapeHTML(t)}</li>`).join('')}</ul>
+          <ul>${takeaways.map(t => `<li>${escapeHTML(t)}</li>`).join("")}</ul>
         </div>
         <div class="section-title">Summary</div>
-        <div class="wiki-summary">${formatSummaryHTML(context.summary)}</div>
-      `}
-      <div class="action-bar">
-        <div class="action-buttons">
-          ${context.url ? `<button class="btn" onclick="window.open('${context.url}', '_blank')">FULL ARTICLE</button>` : `<button class="btn" onclick="openWikipedia('${escapeHTML(context.title)}')">OPEN ON WIKIPEDIA</button>`}
-          <button class="btn btn-amazon" onclick="window.open('${bookLink}', '_blank')">📚 FIND BOOK</button>
-          <button class="btn btn-yt" onclick="openYouTubeSearch('${context.title}')">▶ WATCH ON YOUTUBE</button>
-          ${noSummary ? `<button class="btn btn-full" onclick="openWikipedia('${escapeHTML(context.title)}')">OPEN ON WIKIPEDIA (FALLBACK)</button>` : ``}
-        </div>
-        <button class="btn btn-pro btn-full" onclick="safeCall('generateDecisionProUIPDF')">🚀 DECISION PDF</button>
-        <!-- CTA button linking to decision brief forge for better understanding -->
-        <button class="btn btn-full" style="background:#6ee7ff;color:#071018;border:none;" onclick="window.open('https://chatgpt.com/g/g-6995afbadb9481919e2d939ef2f61e3d-decision-brief-forge','_blank')">BETTER UNDERSTANDING OF THIS SESSION</button>
-        <button class="btn btn-pdf btn-full" onclick="safeCall('generateResearchPDF')">📄 PDF (CLASSIC) (${ENGINE_STATE.research_nodes.length} NODES)</button>
-        <div class="nav-hint">
-          <span>UP: BACK</span>
-          <span style="color:var(--accent-go)">DOWN: ${context.links.length} LINKS</span>
+        <div class="wiki-summary">${formatSummaryHTML(node.summary || "")}</div>
+        <div class="action-bar">
+          <div class="action-buttons">
+            <button class="btn btn-yt" onclick="openYouTubeSearch('${escapeHTML(node.title)}')">YOUTUBE</button>
+            <button class="btn btn-pro" onclick="openWikipedia('${escapeHTML(node.title)}')">OPEN</button>
+            <button class="btn btn-pdf" onclick="generateResearchPDF()">PDF</button>
+          </div>
         </div>
       </div>
-    </div>
-  </div>`;
-  container.appendChild(sumSlide);
-  slideElements.push(sumSlide);
-  if (context.links && context.links.length > 0) {
-    const linkSlide = document.createElement('section');
-    linkSlide.className = "main-slide next";
-    linkSlide.dataset.mode = "research";
-    let html = `<div class="slide-header">
-      <span class="header-title">RELATED TOPICS</span>
-      <span class="header-badge">${context.links.length} LINKS</span>
-    </div><div class="carousel-viewport">`;
-    context.links.forEach((link, i) => {
-      html += `<div class="sub-slide ${i === 0 ? 'opt-active' : 'opt-hidden'}" data-val="${escapeHTML(link.name)}">
-        <div class="role-label">RELATED NODE</div>
-        <h1>${escapeHTML(link.name)}</h1>
-        <div class="primary-question">Swipe down to explore</div>
-        <div class="nav-hint">
-          <span>&larr; MORE</span>
-          <span style="color:var(--accent-go)">DOWN: OPEN</span>
-        </div>
-      </div>`;
-    });
-    html += `</div>`;
-    linkSlide.innerHTML = html;
-    container.appendChild(linkSlide);
-    slideElements.push(linkSlide);
-  }
-  goToSlide(slideElements.length - 2);
-}
-function showErrorSlide(message) {
-  const container = document.getElementById('master-container');
-  if (slideElements.length > 2 && slideElements[slideElements.length - 1].querySelector('.loading-indicator')) {
-    container.removeChild(container.lastChild);
-    slideElements.pop();
-  }
-  const errorSlide = document.createElement('section');
-  errorSlide.className = "main-slide next";
-  errorSlide.innerHTML = `<div class="slide-header"><span class="header-title">ERROR</span><span class="header-badge">FIX</span></div>
-    <div class="sub-slide static article-view">
-      <div class="error-box">${escapeHTML(message)}</div>
-      <button class="btn btn-full" onclick="goToSlide(Math.max(0, currentIdx - 1))">GO BACK</button>
-      <button class="btn btn-full" onclick="location.reload()">RESTART</button>
+      <div class="nav-hint"><span>Swipe up/down: slides</span><span>Tap ☰: panel</span></div>
     </div>`;
-  container.appendChild(errorSlide);
-  slideElements.push(errorSlide);
-  goToSlide(slideElements.length - 1);
+  container.appendChild(section);
+  slideElements.push(section);
+}
+async function renderLinkSlide(linkTitle){
+  const ctx = await WIKI_ENGINE.getContext(linkTitle, WIKI_ENGINE.activeSource);
+  if(!ctx) return;
+  const node = {
+    title: ctx.title,
+    summary: ctx.summary,
+    url: ctx.url,
+    thumbnail: ctx.thumbnail,
+    categories: ctx.categories || [],
+    links: ctx.links || [],
+    source: ctx.source,
+    sourceName: ctx.sourceName,
+    confidence: ctx.confidence,
+    decisionMeta: ENGINE_STATE.research_nodes[0]?.decisionMeta || {}
+  };
+  ENGINE_STATE.research_nodes.push(node);
+  const container = document.getElementById('master-container');
+  const section = document.createElement('section');
+  section.className = "main-slide next";
+  section.dataset.mode = "node";
+  const words = wordCount(node.summary || "");
+  const rt = readingTimeMins(words);
+  const takeaways = extractTakeaways(node.summary || "", 4);
+  const cats = (node.categories || []).slice(0,5);
+  section.innerHTML = `
+    <div class="slide-header">
+      <span class="header-title">NODE</span>
+      <span class="header-badge">${escapeHTML(node.sourceName || '').toUpperCase()}</span>
+    </div>
+    <div class="sub-slide static article-view">
+      <div class="context-panel">
+        <div class="context-top">
+          <div class="thumb">${node.thumbnail ? `<img src="${node.thumbnail}" alt="">` : 'THUMB'}</div>
+          <div class="context-title-wrap">
+            <div class="context-kicker">Related node • Confidence: ${escapeHTML(node.confidence || '')}</div>
+            <h1 style="margin-bottom:6px;">${escapeHTML(node.title)}</h1>
+            <div class="context-stats">
+              <span class="stat-chip">${words} words</span>
+              <span class="stat-chip">${rt} min read</span>
+              <span class="stat-chip">${escapeHTML(node.sourceName || '')}</span>
+            </div>
+          </div>
+        </div>
+        <div class="wiki-meta">
+          ${cats.map(c => `<span class="meta-chip">${escapeHTML(c)}</span>`).join("")}
+        </div>
+        <div class="section-title">Key takeaways</div>
+        <div class="takeaways">
+          <ul>${takeaways.map(t => `<li>${escapeHTML(t)}</li>`).join("")}</ul>
+        </div>
+        <div class="section-title">Summary</div>
+        <div class="wiki-summary">${formatSummaryHTML(node.summary || "")}</div>
+        <div class="action-bar">
+          <div class="action-buttons">
+            <button class="btn btn-yt" onclick="openYouTubeSearch('${escapeHTML(node.title)}')">YOUTUBE</button>
+            <button class="btn btn-pro" onclick="openWikipedia('${escapeHTML(node.title)}')">OPEN</button>
+            <button class="btn btn-pdf" onclick="generateResearchPDF()">PDF</button>
+          </div>
+        </div>
+      </div>
+      <div class="nav-hint"><span>Swipe up/down: slides</span><span>Tap ☰: panel</span></div>
+    </div>`;
+  container.appendChild(section);
+  slideElements.push(section);
 }
 
 /* Synthesis page: compile and edit cross-node insights */
@@ -2117,105 +2024,118 @@ function openSynthesisSlide() {
         <textarea id="syn-rec" style="width:100%; min-height:60px; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;">${escapeHTML(syn.recommendation || '')}</textarea>
       </div>
       <div class="final-actions">
-        <button class="btn btn-full" onclick="saveSynthesisAndExport()">SAVE & EXPORT DECISION PDF</button>
-        <button class="btn btn-full" onclick="goToSlide(currentIdx - 1)">CANCEL</button>
+        <button class="btn btn-full btn-pro" onclick="saveSynthesis()">SAVE</button>
+        <button class="btn btn-full" onclick="closeSynthesisSlide()">CLOSE</button>
       </div>
     </div>`;
   container.appendChild(synSlide);
   slideElements.push(synSlide);
   goToSlide(slideElements.length - 1);
 }
-function saveSynthesisAndExport() {
-  const thesis = document.getElementById('syn-thesis').value.trim();
-  const top = document.getElementById('syn-top').value.trim().split(/\n+/).filter(Boolean);
-  const contradictions = document.getElementById('syn-contradictions').value.trim();
-  const implications = document.getElementById('syn-implications').value.trim();
-  const next = document.getElementById('syn-next').value.trim();
-  const rec = document.getElementById('syn-rec').value.trim();
+function saveSynthesis(){
   ENGINE_STATE.synthesis = {
-    thesis,
-    topTakeaways: top,
-    contradictions,
-    implications,
-    next,
-    recommendation: rec
+    thesis: document.getElementById('syn-thesis')?.value?.trim() || '',
+    topTakeaways: (document.getElementById('syn-top')?.value || '').split('\n').map(s => s.trim()).filter(Boolean),
+    contradictions: document.getElementById('syn-contradictions')?.value?.trim() || '',
+    implications: document.getElementById('syn-implications')?.value?.trim() || '',
+    next: document.getElementById('syn-next')?.value?.trim() || '',
+    recommendation: document.getElementById('syn-rec')?.value?.trim() || ''
   };
-  // Close synthesis slide
+  showToast("SAVED");
+}
+function closeSynthesisSlide(){
   const container = document.getElementById('master-container');
-  container.removeChild(container.lastChild);
-  slideElements.pop();
-  // Export decision pdf
-  generateDecisionProUIPDF();
+  if (container && container.lastChild && container.lastChild.dataset?.mode === "synthesis") {
+    container.removeChild(container.lastChild);
+    slideElements.pop();
+    goToSlide(Math.max(0, slideElements.length - 1));
+  }
+}
+function renderEndSlide(){
+  const container = document.getElementById('master-container');
+  const section = document.createElement('section');
+  section.className = "main-slide next";
+  section.dataset.mode = "end";
+  section.innerHTML = `
+    <div class="slide-header">
+      <span class="header-title">EXPORT</span>
+      <span class="header-badge">FINAL</span>
+    </div>
+    <div class="sub-slide static article-view">
+      <h1>Export</h1>
+      <div class="primary-question">Review synthesis, then export your journey.</div>
+      <div class="context-panel">
+        <div class="section-title" style="margin-top:0">What next?</div>
+        <div style="color:#d6dde8; line-height:1.6;">
+          <p style="margin-top:0">Use <strong>SYNTHESIS</strong> to capture your thesis and next steps before exporting.</p>
+          <p style="margin-bottom:0">Then export as either a classic Research PDF or a Decision Brief PDF.</p>
+        </div>
+      </div>
+      <div class="final-actions">
+        <button class="btn btn-full btn-pro" onclick="openSynthesisSlide()">SYNTHESIS</button>
+        <button class="btn btn-pdf" onclick="generateResearchPDF()">RESEARCH PDF</button>
+        <button class="btn btn-full btn-pro" onclick="generateDecisionProUIPDF()">DECISION PDF</button>
+        <button class="btn btn-full" onclick="renderSearchSlide()">NEW SEARCH</button>
+      </div>
+      <div class="nav-hint"><span>Swipe up/down: slides</span><span>Tap ☰: panel</span></div>
+    </div>`;
+  container.appendChild(section);
+  slideElements.push(section);
 }
 
-/* SWIPE & NAVIGATION (mostly unchanged) */
-let touchStartX = 0, touchStartY = 0;
-let lockVerticalNav = false;
-function initSwipeSystem() {
-  const doc = document;
-  doc.addEventListener('touchstart', e => {
-    const view = e.target.closest('.carousel-viewport');
-    if(!view) return;
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-    lockVerticalNav = !!e.target.closest('.wiki-summary, .takeaways, textarea');
-  }, {passive:true});
-  doc.addEventListener('touchmove', e => {
-    const view = e.target.closest('.carousel-viewport');
-    if(!view) return;
-    if (lockVerticalNav) return;
-    const dy = e.touches[0].clientY - touchStartY;
-    if(dy > 0 && Math.abs(dy) > Math.abs(e.touches[0].clientX - touchStartX)) {
-      if (e.cancelable) e.preventDefault();
-      const bar = document.getElementById('depth-fill');
-      if (bar) bar.style.height = Math.min((dy/150)*100, 100) + '%';
-    }
-  }, {passive:false});
-  doc.addEventListener('touchend', e => {
-    const view = e.target.closest('.carousel-viewport');
-    if(!view) return;
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    const dy = e.changedTouches[0].clientY - touchStartY;
-    const bar = document.getElementById('depth-fill');
-    if (bar) bar.style.height = '0%';
-    if (lockVerticalNav) {
-      lockVerticalNav = false;
-      return;
-    }
-    const mainSlide = view.closest('.main-slide');
-    const mode = mainSlide ? mainSlide.dataset.mode : "";
-    const catType = mainSlide ? mainSlide.dataset.catType : "";
-    if(Math.abs(dy) > 80 && dy > 0) {
-      const activeSub = view.querySelector('.sub-slide.opt-active') || view.querySelector('.sub-slide.static');
-      if(!activeSub) return;
-      const val = activeSub.dataset.val;
-      if(mode === "research" && val) {
-        loadArticleDetails(val);
-      } else if (val) {
-        ENGINE_STATE.items_detected[val] = {qty:1};
-        if(catType && CATEGORY_VECTORS[catType]) {
-          const vec = CATEGORY_VECTORS[catType];
-          for(let k in vec) ENGINE_STATE.session_weights[k] = (ENGINE_STATE.session_weights[k]||0) + vec[k];
-        }
-        showToast("SELECTED");
-        goToSlide(currentIdx + 1);
-      } else {
-        goToSlide(currentIdx + 1);
-      }
-    } else if (dy < -80) {
-      showToast("BACK");
-      goToSlide(currentIdx - 1);
-    } else if(Math.abs(dx) > 60) {
-      const slides = Array.from(view.querySelectorAll('.sub-slide'));
-      if(slides.length <= 1) return;
-      const currIdx2 = slides.findIndex(s => s.classList.contains('opt-active'));
-      if(currIdx2 === -1) return;
-      slides[currIdx2].classList.replace('opt-active', 'opt-hidden');
-      const nextIdx = (currIdx2 + (dx < 0 ? 1 : -1) + slides.length) % slides.length;
-      slides[nextIdx].classList.replace('opt-hidden', 'opt-active');
-    }
-  });
+/* =========================================
+   Swipe navigation
+   ========================================= */
+let startY = null;
+let startX = null;
+let isSwiping = false;
+function onTouchStart(e){
+  if (!e.touches || e.touches.length !== 1) return;
+  // Don't hijack gestures inside scrolling panels/textarea
+  const target = e.target;
+  if (target && (target.closest('#ui-panel') || target.closest('#notes-panel') || target.tagName === 'TEXTAREA' || target.tagName === 'INPUT')) return;
+  startY = e.touches[0].clientY;
+  startX = e.touches[0].clientX;
+  isSwiping = true;
 }
+function onTouchMove(e){
+  if (!isSwiping || startY == null) return;
+  const dy = e.touches[0].clientY - startY;
+  const dx = e.touches[0].clientX - startX;
+  // vertical swipe only
+  if (Math.abs(dy) > 20 && Math.abs(dy) > Math.abs(dx)) {
+    e.preventDefault();
+  }
+}
+function onTouchEnd(e){
+  if (!isSwiping || startY == null) return;
+  const endY = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientY : startY;
+  const dy = endY - startY;
+  if (Math.abs(dy) > 55) {
+    if (dy < 0) goToSlide(currentIdx + 1);
+    else goToSlide(currentIdx - 1);
+  }
+  startY = null;
+  startX = null;
+  isSwiping = false;
+}
+document.addEventListener('touchstart', onTouchStart, { passive: false });
+document.addEventListener('touchmove', onTouchMove, { passive: false });
+document.addEventListener('touchend', onTouchEnd, { passive: true });
+
+/* =========================================
+   Depth indicator (slide progress)
+   ========================================= */
+function updateDepthFill(){
+  const el = document.getElementById('depth-fill');
+  if(!el) return;
+  const total = Math.max(1, slideElements.length - 1);
+  const pct = Math.min(100, Math.max(0, (currentIdx / total) * 100));
+  el.style.height = pct + "%";
+}
+setInterval(updateDepthFill, 120);
+
+/* ---------- navigation ---------- */
 function goToSlide(idx) {
   if(idx < 0 || idx >= slideElements.length) return;
   const prev = slideElements[currentIdx];
@@ -2251,38 +2171,25 @@ function showCrash(errText){
       </div>
       <div class="sub-slide static article-view">
         <div class="error-box">
-          <div style="font-family:var(--font-tech); font-size:0.75rem; font-weight:900; margin-bottom:10px;">
-            SCRIPT ERROR
-          </div>
-          <div style="white-space:pre-wrap; font-family:var(--font-tech); font-size:0.75rem; line-height:1.5;">
-${escapeHTML(errText)}
-          </div>
+          <div style="font-family:var(--font-tech); font-size:0.75rem; font-weight:900; margin-bottom:8px;">ENGINE CRASH</div>
+          <div>${escapeHTML(errText || "Unknown error")}</div>
         </div>
         <button class="btn btn-full" onclick="location.reload()">RELOAD</button>
       </div>
-    </section>
-  `;
+    </section>`;
 }
-window.addEventListener("error", (e) => {
-  const msg = `${e.message}\n${e.filename || ""}:${e.lineno || ""}:${e.colno || ""}`;
-  showCrash(msg);
-});
-window.addEventListener("unhandledrejection", (e) => {
-  const msg = (e.reason && (e.reason.stack || e.reason.message)) ? (e.reason.stack || e.reason.message) : String(e.reason);
-  showCrash("Unhandled Promise Rejection:\n" + msg);
-});
-function safeBoot(){
-  try {
-    if (typeof renderLobby !== "function") throw new Error("renderLobby() missing");
-    if (typeof initSwipeSystem !== "function") throw new Error("initSwipeSystem() missing");
+(function boot(){
+  try{
     renderLobby();
     initVoice();
-    initSwipeSystem();
-  } catch (e) {
-    showCrash(e.stack || e.message || String(e));
+    updateDepthFill();
+    updateUIPanel();
+    updateNotesMeta();
+  }catch(e){
+    console.error(e);
+    showCrash(e?.message || String(e));
   }
-}
-safeBoot();
+})();
   </script>
 </body>
 </html>

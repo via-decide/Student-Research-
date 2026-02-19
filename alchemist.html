@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Alchemist | Kinetic</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
@@ -10,40 +11,171 @@
 
   <style>
     :root{
-      --bg:#000; --card:#0a0a0a; --border:#222;
+      --bg:#000000; --card:#0a0a0a; --border:#222;
       --gold:#ffd600; --green:#2ecc71; --red:#ff4444;
-      --text-white:#fff; --font-serif:'Crimson Text',serif;
-      --font-sans:'Inter',sans-serif; --font-code:'JetBrains Mono',monospace;
+      --text-white:#ffffff; --text-grey:#888888;
+      --font-serif:'Crimson Text',serif;
+      --font-sans:'Inter',sans-serif;
+      --font-code:'JetBrains Mono',monospace;
     }
     *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-    body{margin:0;height:100vh;background:var(--bg);color:var(--text-white);font-family:var(--font-sans);overflow:hidden;display:flex;flex-direction:column;}
-    #header{width:90%;margin:25px auto 0;z-index:100;flex-shrink:0;}
-    .header-meta{display:flex;justify-content:space-between;font-family:var(--font-code);font-size:.75rem;color:#666;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:15px;white-space:nowrap;}
-    .progress-track{width:100%;height:3px;background:#222;border-radius:2px;}
-    #progress-bar{height:100%;background:var(--gold);width:0%;transition:width .4s ease;border-radius:2px;}
-    #kinetic-logger{width:90%;margin:15px auto 5px;font-family:var(--font-code);font-size:.8rem;color:#444;line-height:1.4;text-transform:uppercase;min-height:60px;display:flex;flex-direction:column;justify-content:flex-end;flex-shrink:0;}
-    .log-line{opacity:.5;transition:opacity .2s;}
-    .log-line.active{color:var(--green);opacity:1;font-weight:700;}
-    .log-line.primary{color:var(--gold);opacity:1;font-weight:700;}
-    .log-line.danger{color:var(--red);opacity:1;font-weight:700;}
-    #stack{position:relative;width:90%;max-width:420px;height:calc(100vh - 220px - env(safe-area-inset-bottom));margin:10px auto 20px;perspective:1500px;display:flex;align-items:center;justify-content:center;flex:1;min-height:0;}
-    .card{position:absolute;width:100%;height:100%;background:var(--card);border-radius:14px;border:1px solid var(--border);padding:18px 18px 16px;box-shadow:0 20px 60px rgba(0,0,0,.95);will-change:transform;transform-style:preserve-3d;overflow:hidden;transition:transform .18s ease,opacity .18s ease;display:flex;flex-direction:column;gap:12px;min-height:0;}
-    .card.locked{opacity:.18;transform:scale(.97);filter:grayscale(100%);}
-    .card-q{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;width:100%;padding:4px 4px;font-family:var(--font-serif);font-size:clamp(1.15rem,4.8vw,1.65rem);line-height:1.42;font-weight:600;text-align:center;color:var(--text-white);overflow-wrap:anywhere;word-break:break-word;hyphens:auto;display:flex;flex-direction:column;justify-content:center;}
+    body{
+      margin:0; height:100vh; background:var(--bg); color:var(--text-white);
+      font-family:var(--font-sans); overflow:hidden;
+      display:flex; flex-direction:column;
+    }
+
+    #header{width:90%; margin:25px auto 0; z-index:100; flex-shrink:0;}
+    .header-meta{
+      display:flex; justify-content:space-between;
+      font-family:var(--font-code); font-size:0.75rem; color:#666;
+      letter-spacing:1.5px; text-transform:uppercase; margin-bottom:15px;
+      white-space:nowrap;
+    }
+    .progress-track{width:100%; height:3px; background:#222; border-radius:2px;}
+    #progress-bar{height:100%; background:var(--gold); width:0%; transition:width 0.4s ease; border-radius:2px;}
+
+    #kinetic-logger{
+      width:90%; margin:15px auto 5px; font-family:var(--font-code);
+      font-size:0.8rem; color:#444; line-height:1.4; text-transform:uppercase;
+      min-height:60px; display:flex; flex-direction:column; justify-content:flex-end;
+      flex-shrink:0;
+    }
+    .log-line{opacity:0.5; transition:opacity 0.2s;}
+    .log-line.active{color:var(--green); opacity:1; font-weight:700;}
+    .log-line.primary{color:var(--gold); opacity:1; font-weight:700;}
+    .log-line.danger{color:var(--red); opacity:1; font-weight:700;}
+
+    #stack{
+      position:relative; width:90%; max-width:420px;
+      height:calc(100vh - 220px - env(safe-area-inset-bottom));
+      margin:10px auto 20px;
+      perspective:1500px;
+      display:flex; align-items:center; justify-content:center;
+      flex:1; min-height:0;
+    }
+
+    .card{
+      position:absolute;
+      width:100%; height:100%;
+      background:var(--card);
+      border-radius:14px; border:1px solid var(--border);
+      padding:18px 18px 16px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.95);
+      will-change: transform;
+      transform-style:preserve-3d;
+      overflow:hidden;
+      transition: transform 0.18s ease, opacity 0.18s ease;
+
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      min-height:0;
+    }
+    .card.locked{opacity:0.18; transform:scale(0.97); filter:grayscale(100%);}
+
+    .card-q{
+      flex:1;
+      min-height:0;
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+
+      width:100%;
+      padding:4px 4px;
+
+      font-family:var(--font-serif);
+      font-size:clamp(1.15rem, 4.8vw, 1.65rem);
+      line-height:1.42;
+      font-weight:600;
+      text-align:center;
+      color:var(--text-white);
+
+      overflow-wrap:anywhere;
+      word-break:break-word;
+      hyphens:auto;
+
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
     .card-q::-webkit-scrollbar{width:0px;}
-    .chiprow{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
-    .chip{font-family:var(--font-code);font-size:.65rem;color:#bbb;border:1px solid #2a2a2a;background:#080808;padding:6px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.08em;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .small{font-family:var(--font-code);font-size:.72rem;color:#666;letter-spacing:.08em;text-transform:uppercase;text-align:center;line-height:1.5;}
+
+    .chiprow{display:flex; flex-wrap:wrap; gap:8px; justify-content:center;}
+    .chip{
+      font-family:var(--font-code); font-size:0.65rem; color:#bbb;
+      border:1px solid #2a2a2a; background:#080808;
+      padding:6px 10px; border-radius:999px;
+      text-transform:uppercase; letter-spacing:0.08em;
+      max-width:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    .small{
+      font-family:var(--font-code); font-size:0.72rem; color:#666;
+      letter-spacing:0.08em; text-transform:uppercase; text-align:center; line-height:1.5;
+    }
     .muted{color:#777;}
-    .btnrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-top:auto;flex-shrink:0;}
-    .btn{width:100%;border-radius:12px;border:1px solid #2a2a2a;background:#0b0b0b;color:#fff;padding:12px 10px;font-weight:900;font-family:var(--font-code);letter-spacing:.06em;cursor:pointer;text-transform:uppercase;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .btn:active{transform:scale(.99);opacity:.95;}
-    .btn-gold{border-color:rgba(255,214,0,.55);color:var(--gold);}
-    .btn-green{border-color:rgba(46,204,113,.55);color:var(--green);}
-    .btn-red{border-color:rgba(255,68,68,.55);color:var(--red);}
-    .swipe-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.86);font-family:var(--font-sans);font-weight:900;font-size:1.15rem;text-transform:uppercase;letter-spacing:1px;text-align:center;padding:26px;opacity:0;pointer-events:none;transition:opacity .1s ease,transform .1s ease;border-radius:14px;color:var(--text-white);border:1px solid #444;transform:scale(.92);overflow-wrap:anywhere;word-break:break-word;hyphens:auto;line-height:1.25;}
-    .swipe-label.show{opacity:1;transform:scale(1);}
-    .swipe-label .dirHint{display:block;margin-top:10px;font-family:var(--font-code);font-size:.7rem;color:#777;letter-spacing:.08em;}
+
+    .btnrow{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      width:100%;
+      margin-top:auto;
+      flex-shrink:0;
+    }
+    .btn{
+      width:100%;
+      border-radius:12px;
+      border:1px solid #2a2a2a;
+      background:#0b0b0b;
+      color:#fff;
+      padding:12px 10px;
+      font-weight:900;
+      font-family:var(--font-code);
+      letter-spacing:0.06em;
+      cursor:pointer;
+      text-transform:uppercase;
+      line-height:1.15;
+
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .btn:active{transform:scale(0.99); opacity:0.95;}
+    .btn-gold{border-color:rgba(255,214,0,.55); color:var(--gold);}
+    .btn-green{border-color:rgba(46,204,113,.55); color:var(--green);}
+    .btn-red{border-color:rgba(255,68,68,.55); color:var(--red);}
+
+    .swipe-label{
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(0,0,0,0.86);
+      font-family:var(--font-sans); font-weight:900;
+      font-size:1.15rem;
+      text-transform:uppercase; letter-spacing:1px;
+      text-align:center; padding:26px;
+      opacity:0; pointer-events:none;
+      transition:opacity 0.1s ease, transform 0.1s ease;
+      border-radius:14px; color:var(--text-white); border:1px solid #444;
+      transform:scale(0.92);
+
+      overflow-wrap:anywhere;
+      word-break:break-word;
+      hyphens:auto;
+      line-height:1.25;
+    }
+    .swipe-label.show{opacity:1; transform:scale(1);}
+    .swipe-label .dirHint{
+      display:block;
+      margin-top:10px;
+      font-family:var(--font-code);
+      font-size:0.7rem;
+      color:#777;
+      letter-spacing:0.08em;
+    }
   </style>
 </head>
 
@@ -58,124 +190,77 @@
 
   <div id="kinetic-logger">
     <div class="log-line" id="log-1">> SYSTEM BOOT</div>
-    <div class="log-line" id="log-2">> INJECTING DATA...</div>
+    <div class="log-line" id="log-2">> AWAITING INJECTION</div>
     <div class="log-line active" id="log-3">> ...</div>
   </div>
 
   <div id="stack">
     <div class="card">
-      <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666;">LOADING KINETIC CORE...</div>
+      <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666;">
+        WAITING FOR PARENT PAYLOAD...
+      </div>
     </div>
   </div>
 
 <script>
-/* ========= PATH B CONFIG (EDIT THESE) ========= */
-const PARENT_ORIGIN = "https://YOUR-PARENT-DOMAIN.COM"; // e.g. https://student-research.pages.dev
-const RETURN_URL    = "https://YOUR-PARENT-DOMAIN.COM/index.html"; // where to redirect if opener is null
+/* =========================================================
+   PATH B (CROSS-ORIGIN) BRIDGE
+   - Parent opens: alchemist.html?po=<PARENT_ORIGIN>&ru=<RETURN_URL>
+   - Parent injects payload via postMessage: { type:"ALCHEMIST_INJECT", payload:[...] }
+   - Child acks via: { type:"ALCHEMIST_ACK" }
+   - Child returns results via: { type:"ALCHEMIST_RESULTS", payload:{...} }
+   - Fallback: redirect to RETURN_URL#alchemist_results=<base64>
+========================================================= */
 
-/* ========= INPUT (still via localStorage if parent injects on same device/browser) =========
-   If injection is also cross-domain, pass data via URL or message instead.
-*/
-const ALCHEMIST_LS_KEY = "ALCHEMIST_INJECTED_DATA";
+const urlParams = new URLSearchParams(location.search);
+const PARENT_ORIGIN = decodeURIComponent(urlParams.get("po") || "*");
+const RETURN_URL = decodeURIComponent(urlParams.get("ru") || "");
 
-/* ========= HELPERS ========= */
 const ALL_DIRS = ["UP","RIGHT","LEFT","DOWN"];
-
-function safeJSONParse(raw){ try { return JSON.parse(raw); } catch(e){ return null; } }
 function normDir(d){ const x=String(d||"").trim().toUpperCase(); return ALL_DIRS.includes(x)?x:"UP"; }
 function escapeHTML(str){
   return String(str ?? "")
-    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
 }
-function buildOptionMap(q){
-  const correctDir = normDir(q.Correct_Direction);
-  const correctAns = (q.Correct_Answer || "").trim() || "—";
-  const distractors = [(q.Distractor_1||"").trim(), (q.Distractor_2||"").trim(), (q.Distractor_3||"").trim()].filter(Boolean);
-  const map = {}; map[correctDir]=correctAns;
-  const remaining = ALL_DIRS.filter(d=>d!==correctDir);
-  for (let i=0;i<remaining.length;i++) map[remaining[i]] = distractors[i] || "—";
-  return map;
-}
-function dominantDir(dx, dy, threshold=40){
-  const ax=Math.abs(dx), ay=Math.abs(dy);
-  if (ax<threshold && ay<threshold) return null;
-  if (ax>ay) return dx>0 ? "RIGHT" : "LEFT";
-  return dy>0 ? "DOWN" : "UP";
-}
-function swipeTransform(dir){
-  switch(dir){
-    case "UP": return "translate(0px,-720px) rotate(-8deg)";
-    case "DOWN": return "translate(0px,720px) rotate(8deg)";
-    case "LEFT": return "translate(-720px,0px) rotate(-10deg)";
-    case "RIGHT": return "translate(720px,0px) rotate(10deg)";
-    default: return "translate(0px,-720px)";
-  }
-}
-function truncate(s,n){ const t=String(s||"").replace(/\s+/g," ").trim(); return (t.length<=n)?t:(t.slice(0,n-1)+"…"); }
+function safeJSONParse(raw){ try { return JSON.parse(raw); } catch(e){ return null; } }
 
-/* ========= DELIVERY (Path B) ========= */
-function deliverResults(payload){
-  // 1) postMessage to opener (best)
-  let sent = false;
+function packB64(obj){
+  const s = JSON.stringify(obj);
+  return btoa(unescape(encodeURIComponent(s)));
+}
+function deliverToParent(type, payload){
+  let ok = false;
   try{
-    if (window.opener && !window.opener.closed) {
-      window.opener.postMessage({ type:"ALCHEMIST_RESULTS", payload }, PARENT_ORIGIN);
-      sent = true;
+    if (window.opener && !window.opener.closed && PARENT_ORIGIN !== "*") {
+      window.opener.postMessage({ type, payload }, PARENT_ORIGIN);
+      ok = true;
     }
   }catch(e){}
 
-  // 2) redirect fallback (works even without opener)
-  // Use URL fragment to avoid server logs + allow larger payloads than query.
-  if (!sent) {
+  // fallback only for RESULTS
+  if (!ok && type === "ALCHEMIST_RESULTS" && RETURN_URL) {
     try{
-      const packed = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(payload)))));
-      window.location.href = `${RETURN_URL}#alchemist_results=${packed}`;
-      sent = true;
+      location.href = `${RETURN_URL}#alchemist_results=${encodeURIComponent(packB64(payload))}`;
+      ok = true;
     }catch(e){}
   }
-  return sent;
+  return ok;
 }
 
-/* ========= LOAD INJECTED DATA ========= */
-let INJECTED_DATA = [];
-try{
-  const raw = localStorage.getItem(ALCHEMIST_LS_KEY);
-  const parsed = raw ? safeJSONParse(raw) : null;
-  if (Array.isArray(parsed) && parsed.length) INJECTED_DATA = parsed;
-}catch(e){ INJECTED_DATA = []; }
+/* =========================
+   DATA MODEL (set after injection)
+========================= */
+let RAW_DATA = [];
+let idx = 0;
+let xp = 0;
+let correctCount = 0;
+let answered = [];
+let injected = false;
 
-if (!INJECTED_DATA.length) {
-  INJECTED_DATA = [{
-    Question_ID:"DEMO_001",
-    Set_Code:"DEMO",
-    Domain:"Decision OS",
-    Subdomain:"Onboarding",
-    Difficulty:"1",
-    Question_Text:"DEMO MODE (no injected data found).",
-    Correct_Answer:"OK",
-    Distractor_1:"—",
-    Distractor_2:"—",
-    Distractor_3:"—",
-    Correct_Direction:"UP",
-    Explanation_Short:"No injected data detected.",
-    Explanation_Long:"If injection is cross-domain, pass payload via postMessage or URL."
-  }];
-}
-
-const RAW_DATA = INJECTED_DATA.map((q, idx) => ({
-  id: q.Question_ID || String(idx + 1).padStart(3, "0"),
-  domain: q.Domain || "DOMAIN",
-  subdomain: q.Subdomain || "",
-  difficulty: Number(q.Difficulty || 3),
-  text: q.Question_Text || "Untitled question",
-  correctDir: normDir(q.Correct_Direction),
-  optionMap: buildOptionMap(q),
-  expShort: q.Explanation_Short || "",
-  expLong: q.Explanation_Long || ""
-}));
-
-/* ========= UI ========= */
 const els = {
   stack: document.getElementById("stack"),
   progress: document.getElementById("progress-bar"),
@@ -186,155 +271,254 @@ const els = {
   log3: document.getElementById("log-3"),
 };
 
-let idx = 0, xp = 0, correctCount = 0, answered = [], delivered = false;
-
-function setLog(a,b,c,mode="active"){
-  els.log1.textContent=a||"> ..."; els.log2.textContent=b||"> ..."; els.log3.textContent=c||"> ...";
-  els.log1.className="log-line"; els.log2.className="log-line";
-  els.log3.className="log-line " + (mode==="danger"?"danger":(mode==="primary"?"primary":"active"));
+function setLog(primary, secondary, tertiary, mode="active"){
+  if (els.log1) els.log1.textContent = primary || "> ...";
+  if (els.log2) els.log2.textContent = secondary || "> ...";
+  if (els.log3) els.log3.textContent = tertiary || "> ...";
+  els.log1.className = "log-line";
+  els.log2.className = "log-line";
+  els.log3.className = "log-line " + (mode === "danger" ? "danger" : (mode === "primary" ? "primary" : "active"));
 }
 function updateHeader(){
   const total = RAW_DATA.length;
-  const pct = total ? Math.round((idx/total)*100) : 0;
-  els.progress.style.width = pct + "%";
-  els.xp.textContent = xp + " XP";
-  els.id.textContent = `VIA.STACK • ${idx}/${total}`;
+  const pct = total ? Math.round((idx / total) * 100) : 0;
+  if (els.progress) els.progress.style.width = pct + "%";
+  if (els.xp) els.xp.textContent = xp + " XP";
+  if (els.id) els.id.textContent = `VIA.STACK • ${idx}/${total}`;
 }
 
-function attachSwipe(card,label,q){
+function dominantDir(dx, dy, threshold=40){
+  const ax = Math.abs(dx), ay = Math.abs(dy);
+  if (ax < threshold && ay < threshold) return null;
+  if (ax > ay) return dx > 0 ? "RIGHT" : "LEFT";
+  return dy > 0 ? "DOWN" : "UP";
+}
+function swipeTransform(dir){
+  switch(dir){
+    case "UP": return "translate(0px,-720px) rotate(-8deg)";
+    case "DOWN": return "translate(0px,720px) rotate(8deg)";
+    case "LEFT": return "translate(-720px,0px) rotate(-10deg)";
+    case "RIGHT": return "translate(720px,0px) rotate(10deg)";
+    default: return "translate(0px,-720px)";
+  }
+}
+
+function buildOptionMap(q){
+  const correctDir = normDir(q.Correct_Direction);
+  const correctAns = (q.Correct_Answer || "").trim() || "—";
+  const d1 = (q.Distractor_1 || "").trim();
+  const d2 = (q.Distractor_2 || "").trim();
+  const d3 = (q.Distractor_3 || "").trim();
+  const distractors = [d1, d2, d3].filter(Boolean);
+
+  const map = {};
+  map[correctDir] = correctAns;
+
+  const remaining = ALL_DIRS.filter(d => d !== correctDir);
+  for (let i = 0; i < remaining.length; i++){
+    map[remaining[i]] = distractors[i] || "—";
+  }
+  return map;
+}
+
+function attachSwipe(card, label, q){
   let sx=0, sy=0, dragging=false;
-  card.addEventListener("touchstart",(e)=>{
-    if(!e.touches||e.touches.length!==1) return;
-    dragging=true; sx=e.touches[0].clientX; sy=e.touches[0].clientY;
-    card.style.transition="none";
-  },{passive:true});
 
-  card.addEventListener("touchmove",(e)=>{
-    if(!dragging||!e.touches||e.touches.length!==1) return;
-    const dx=e.touches[0].clientX-sx, dy=e.touches[0].clientY-sy;
-    card.style.transform=`translate(${dx*0.9}px, ${dy*0.9}px) rotateY(${dx/18}deg) rotateX(${-dy/22}deg)`;
-    const dir = dominantDir(dx,dy);
-    if(dir){
-      label.innerHTML = `${escapeHTML(q.optionMap[dir]||dir)}<span class="dirHint">${dir}</span>`;
+  card.addEventListener("touchstart", (e) => {
+    if (!e.touches || e.touches.length !== 1) return;
+    dragging = true;
+    sx = e.touches[0].clientX;
+    sy = e.touches[0].clientY;
+    card.style.transition = "none";
+  }, {passive:true});
+
+  card.addEventListener("touchmove", (e) => {
+    if (!dragging || !e.touches || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - sx;
+    const dy = e.touches[0].clientY - sy;
+
+    card.style.transform = `translate(${dx*0.9}px, ${dy*0.9}px) rotateY(${dx/18}deg) rotateX(${-dy/22}deg)`;
+
+    const dir = dominantDir(dx, dy);
+    if (dir) {
+      const optText = (q.optionMap && q.optionMap[dir]) ? q.optionMap[dir] : dir;
+      label.innerHTML = `${escapeHTML(optText)}<span class="dirHint">${dir}</span>`;
       label.classList.add("show");
-    } else label.classList.remove("show");
-  },{passive:true});
+    } else {
+      label.classList.remove("show");
+    }
+  }, {passive:true});
 
-  card.addEventListener("touchend",(e)=>{
-    if(!dragging) return;
-    dragging=false;
-    const t=e.changedTouches?.[0]; const dx=t?(t.clientX-sx):0; const dy=t?(t.clientY-sy):0;
-    const dir = dominantDir(dx,dy,65);
-    if(!dir){
-      card.style.transition="transform 0.18s ease";
-      card.style.transform="translate(0px,0px) rotate(0deg)";
+  card.addEventListener("touchend", (e) => {
+    if (!dragging) return;
+    dragging = false;
+
+    const t = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0] : null;
+    const dx = t ? (t.clientX - sx) : 0;
+    const dy = t ? (t.clientY - sy) : 0;
+
+    const dir = dominantDir(dx, dy, 65);
+    if (!dir) {
+      card.style.transition = "transform 0.18s ease";
+      card.style.transform = `translate(0px,0px) rotate(0deg)`;
       label.classList.remove("show");
       return;
     }
     answer(dir);
-  },{passive:true});
+  }, {passive:true});
 }
 
-function makeCard(q,z){
-  const card=document.createElement("div");
-  card.className="card"; card.style.zIndex=String(z);
+function makeCard(q, zIndex){
+  const card = document.createElement("div");
+  card.className = "card";
+  card.style.zIndex = String(zIndex);
 
-  const label=document.createElement("div");
-  label.className="swipe-label";
+  const label = document.createElement("div");
+  label.className = "swipe-label";
 
-  const qWrap=document.createElement("div");
-  qWrap.className="card-q";
-  qWrap.innerHTML=escapeHTML(q.text);
+  const qWrap = document.createElement("div");
+  qWrap.className = "card-q";
+  qWrap.innerHTML = escapeHTML(q.text);
 
-  const chips=document.createElement("div");
-  chips.className="chiprow";
-  chips.innerHTML=`
+  const chipRow = document.createElement("div");
+  chipRow.className = "chiprow";
+  chipRow.innerHTML = `
     <span class="chip">${escapeHTML(q.domain)}</span>
-    ${q.subdomain?`<span class="chip">${escapeHTML(q.subdomain)}</span>`:""}
+    ${q.subdomain ? `<span class="chip">${escapeHTML(q.subdomain)}</span>` : ""}
     <span class="chip">D:${escapeHTML(String(q.difficulty))}</span>
     <span class="chip">#${escapeHTML(q.id)}</span>
   `;
 
-  const hint=document.createElement("div");
-  hint.className="small";
-  hint.innerHTML=`<div class="muted">Swipe or tap an option</div>`;
+  const hint = document.createElement("div");
+  hint.className = "small";
+  hint.innerHTML = `<div class="muted">Swipe or tap an option</div>`;
 
-  const btnRow=document.createElement("div");
-  btnRow.className="btnrow";
-  const btnDefs=[{dir:"UP",cls:"btn btn-gold"},{dir:"RIGHT",cls:"btn btn-green"},{dir:"LEFT",cls:"btn btn-red"},{dir:"DOWN",cls:"btn"}];
-  btnDefs.forEach(def=>{
-    const b=document.createElement("button");
-    b.className=def.cls; b.textContent=q.optionMap[def.dir]||"—";
-    b.onclick=()=>answer(def.dir);
+  const btnRow = document.createElement("div");
+  btnRow.className = "btnrow";
+
+  const btnDefs = [
+    { dir:"UP",    cls:"btn btn-gold" },
+    { dir:"RIGHT", cls:"btn btn-green" },
+    { dir:"LEFT",  cls:"btn btn-red" },
+    { dir:"DOWN",  cls:"btn" }
+  ];
+
+  btnDefs.forEach(def => {
+    const b = document.createElement("button");
+    b.className = def.cls;
+    b.title = def.dir;
+    b.textContent = q.optionMap[def.dir] || "—";
+    b.addEventListener("click", () => answer(def.dir));
     btnRow.appendChild(b);
   });
 
   card.appendChild(label);
   card.appendChild(qWrap);
-  card.appendChild(chips);
+  card.appendChild(chipRow);
   card.appendChild(hint);
   card.appendChild(btnRow);
 
-  attachSwipe(card,label,q);
+  attachSwipe(card, label, q);
   return card;
 }
 
 function render(){
-  els.stack.innerHTML="";
+  els.stack.innerHTML = "";
   updateHeader();
-  if(idx>=RAW_DATA.length){ renderResults(); return; }
 
-  const curr=RAW_DATA[idx], next=RAW_DATA[idx+1];
-  if(next){ const c2=makeCard(next,1); c2.classList.add("locked"); els.stack.appendChild(c2); }
-  els.stack.appendChild(makeCard(curr,2));
+  if (idx >= RAW_DATA.length) {
+    renderResults();
+    return;
+  }
 
-  const target = curr.optionMap[curr.correctDir] || curr.correctDir;
-  setLog("> SYSTEM LIVE", `> QUESTIONS: ${RAW_DATA.length}`, `> ACTIVE: #${curr.id} (TARGET: ${target})`, "primary");
+  const curr = RAW_DATA[idx];
+  const next = RAW_DATA[idx + 1];
+
+  if (next) {
+    const c2 = makeCard(next, 1);
+    c2.classList.add("locked");
+    els.stack.appendChild(c2);
+  }
+  const c1 = makeCard(curr, 2);
+  els.stack.appendChild(c1);
+
+  const correctText = curr.optionMap[curr.correctDir] || curr.correctDir;
+  setLog("> SYSTEM LIVE", `> QUESTIONS: ${RAW_DATA.length}`, `> ACTIVE: #${curr.id} (TARGET: ${correctText})`, "primary");
 }
 
 function answer(chosenDir){
-  if(idx>=RAW_DATA.length) return;
-  const q=RAW_DATA[idx];
-  const correct = chosenDir===q.correctDir;
-  const chosenText=q.optionMap[chosenDir]||"—";
-  const correctText=q.optionMap[q.correctDir]||"—";
+  if (idx >= RAW_DATA.length) return;
 
-  answered.push({ id:q.id, chosenDir, chosenText, isCorrect:correct, correctDir:q.correctDir, correctText, text:q.text, expShort:q.expShort });
+  const q = RAW_DATA[idx];
+  const correct = chosenDir === q.correctDir;
+  const chosenText = q.optionMap[chosenDir] || "—";
+  const correctText = q.optionMap[q.correctDir] || "—";
 
-  if(correct){ xp+=10; correctCount++; setLog("> SIGNAL ACQUIRED", "> +10 XP", `> CORRECT: ${chosenText}`, "primary"); }
-  else { xp+=2; setLog("> COLLISION", "> +2 XP", `> WRONG: ${chosenText} • EXPECTED: ${correctText}`, "danger"); }
+  answered.push({
+    id: q.id,
+    chosenDir,
+    chosenText,
+    isCorrect: correct,
+    correctDir: q.correctDir,
+    correctText,
+    domain: q.domain,
+    subdomain: q.subdomain,
+    difficulty: q.difficulty,
+    text: q.text,
+    expShort: q.expShort,
+    expLong: q.expLong,
+  });
 
+  if (correct) {
+    xp += 10;
+    correctCount += 1;
+    setLog("> SIGNAL ACQUIRED", `> +10 XP`, `> CORRECT: ${chosenText}`, "primary");
+  } else {
+    xp += 2;
+    setLog("> COLLISION", `> +2 XP`, `> WRONG: ${chosenText} • EXPECTED: ${correctText}`, "danger");
+  }
   updateHeader();
 
-  const top=els.stack.querySelector(".card:not(.locked)");
-  if(top){
-    top.style.transition="transform 0.22s ease, opacity 0.22s ease";
-    top.style.transform=swipeTransform(chosenDir);
-    top.style.opacity="0";
+  const topCard = els.stack.querySelector(".card:not(.locked)");
+  if (topCard) {
+    topCard.style.transition = "transform 0.22s ease, opacity 0.22s ease";
+    topCard.style.transform = swipeTransform(chosenDir);
+    topCard.style.opacity = "0";
   }
-  setTimeout(()=>{ idx++; render(); }, 230);
+
+  setTimeout(() => { idx += 1; render(); }, 230);
 }
 
 function resultsPayload(){
-  const total=RAW_DATA.length;
-  const accuracy= total ? Math.round((correctCount/total)*100) : 0;
-  return { accuracy, xp, correctCount, total, answered, finishedAt:new Date().toISOString() };
+  const total = RAW_DATA.length;
+  const accuracy = total ? Math.round((correctCount/total)*100) : 0;
+  return {
+    version: "B1",
+    accuracy,
+    xp,
+    correctCount,
+    total,
+    finishedAt: new Date().toISOString(),
+    answered
+  };
 }
 
 function renderResults(){
-  els.progress.style.width="100%";
-  const total=RAW_DATA.length;
-  const pct= total ? Math.round((correctCount/total)*100) : 0;
-  setLog("> RUN COMPLETE", `> SCORE: ${correctCount}/${total} (${pct}%)`, "> SENDING RESULTS…", "primary");
+  const total = RAW_DATA.length;
+  const pct = total ? Math.round((correctCount/total)*100) : 0;
+  if (els.progress) els.progress.style.width = "100%";
 
-  if(!delivered){
-    delivered = deliverResults(resultsPayload());
-    setLog("> RUN COMPLETE", `> SCORE: ${correctCount}/${total} (${pct}%)`, delivered ? "> RESULTS SENT" : "> SEND FAILED", delivered ? "primary" : "danger");
-  }
+  // send results back
+  const payload = resultsPayload();
+  const ok = deliverToParent("ALCHEMIST_RESULTS", payload);
 
-  const card=document.createElement("div");
-  card.className="card"; card.style.zIndex="5";
-  card.innerHTML=`
+  setLog("> RUN COMPLETE", `> SCORE: ${correctCount}/${total} (${pct}%)`, ok ? "> RESULTS SENT" : "> SEND FAILED", ok ? "primary" : "danger");
+
+  const card = document.createElement("div");
+  card.className = "card";
+  card.style.zIndex = "5";
+
+  card.innerHTML = `
     <div class="card-q" style="flex:0; min-height:auto; overflow:visible; font-family:var(--font-code); font-size:1.05rem; color:#ddd;">
       QUIZ COMPLETE
       <div style="height:12px"></div>
@@ -342,46 +526,60 @@ function renderResults(){
       <div style="height:8px"></div>
       <div class="small">ACCURACY: ${pct}% • XP: ${xp}</div>
       <div style="height:18px"></div>
+
       <div class="btnrow" style="grid-template-columns:1fr; gap:10px;">
         <button class="btn btn-gold" id="btn-pdf">EXPORT PDF</button>
         <button class="btn btn-green" id="btn-retry">RETRY</button>
         <button class="btn" id="btn-close">CLOSE</button>
       </div>
       <div style="height:14px"></div>
-      <div class="small muted">${delivered ? "Results delivered to parent." : "If popup/bridge failed, use redirect fallback."}</div>
+      <div class="small muted">${ok ? "Results delivered to parent." : "If blocked, redirect fallback will be used if RETURN_URL exists."}</div>
     </div>
   `;
-  els.stack.innerHTML=""; els.stack.appendChild(card);
+
+  els.stack.innerHTML = "";
+  els.stack.appendChild(card);
 
   document.getElementById("btn-pdf").onclick = exportPDF;
-  document.getElementById("btn-retry").onclick = ()=>{ idx=0; xp=0; correctCount=0; answered=[]; delivered=false; render(); };
-  document.getElementById("btn-close").onclick = ()=>window.close();
+  document.getElementById("btn-retry").onclick = () => { idx = 0; xp = 0; correctCount = 0; answered = []; render(); };
+  document.getElementById("btn-close").onclick = () => window.close();
 }
 
 async function exportPDF(){
   try{
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit:"pt", format:"a4" });
-    const w = doc.internal.pageSize.getWidth(), h = doc.internal.pageSize.getHeight(), margin = 40;
+    const w = doc.internal.pageSize.getWidth();
+    const h = doc.internal.pageSize.getHeight();
+    const margin = 40;
 
-    doc.setFont("helvetica","bold"); doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
     doc.text("Alchemist Quiz Report", margin, 60);
 
-    doc.setFont("helvetica","normal"); doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
     doc.text(`Total: ${RAW_DATA.length} | Correct: ${correctCount} | XP: ${xp}`, margin, 86);
     doc.text(`Generated: ${new Date().toLocaleString()}`, margin, 104);
 
-    let y=140, lineH=14;
-    answered.forEach((a,i)=>{
-      if(y>h-120){ doc.addPage(); y=60; }
-      doc.setFont("helvetica","bold"); doc.setFontSize(11);
-      doc.text(`${i+1}. ${truncate(a.text, 90)}`, margin, y); y += lineH;
-      doc.setFont("helvetica","normal"); doc.setFontSize(10);
+    let y = 140;
+    const lineH = 14;
+
+    answered.forEach((a, i) => {
+      if (y > h - 120) { doc.addPage(); y = 60; }
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text(`${i+1}. ${String(a.text||"").replace(/\s+/g," ").slice(0, 120)}`, margin, y); y += lineH;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
       doc.text(`Chosen: ${a.chosenText} (${a.chosenDir})`, margin, y); y += lineH;
-      doc.text(`Expected: ${a.correctText} (${a.correctDir}) | ${a.isCorrect?"CORRECT":"WRONG"}`, margin, y); y += lineH;
-      if(a.expShort){
+      doc.text(`Expected: ${a.correctText} (${a.correctDir}) | ${a.isCorrect ? "CORRECT" : "WRONG"}`, margin, y); y += lineH;
+
+      if (a.expShort) {
         const lines = doc.splitTextToSize(`Note: ${a.expShort}`, w - margin*2);
-        lines.forEach(L=>{ doc.text(L, margin, y); y += lineH; });
+        lines.forEach(L => { doc.text(L, margin, y); y += lineH; });
       }
       y += 10;
     });
@@ -392,10 +590,69 @@ async function exportPDF(){
   }
 }
 
-(function boot(){
-  setLog("> SYSTEM BOOT", `> INJECTED: ${INJECTED_DATA.length} ITEMS`, "> STARTING QUIZ...", "active");
+/* =========================
+   INJECTION HANDLER (REQUIRED FOR PATH B)
+========================= */
+function applyInjectedData(injectedArr){
+  const arr = Array.isArray(injectedArr) ? injectedArr : [];
+  if (!arr.length) return false;
+
+  RAW_DATA = arr.map((q, i) => ({
+    id: q.Question_ID || String(i + 1).padStart(3, "0"),
+    domain: q.Domain || "DOMAIN",
+    subdomain: q.Subdomain || "",
+    difficulty: Number(q.Difficulty || 3),
+    text: q.Question_Text || "Untitled question",
+    correctDir: normDir(q.Correct_Direction),
+    optionMap: buildOptionMap(q),
+    expShort: q.Explanation_Short || "",
+    expLong: q.Explanation_Long || ""
+  }));
+
+  idx = 0; xp = 0; correctCount = 0; answered = [];
+  injected = true;
+
+  setLog("> INJECTION OK", `> ITEMS: ${RAW_DATA.length}`, "> STARTING QUIZ", "primary");
   updateHeader();
   render();
+  return true;
+}
+
+window.addEventListener("message", (event) => {
+  // strict origin check
+  if (PARENT_ORIGIN !== "*" && event.origin !== PARENT_ORIGIN) return;
+
+  if (event.data?.type === "ALCHEMIST_INJECT") {
+    const ok = applyInjectedData(event.data.payload);
+    deliverToParent("ALCHEMIST_ACK", { ok, received: Array.isArray(event.data.payload) ? event.data.payload.length : 0 });
+  }
+});
+
+// demo fallback if no injection happens
+setTimeout(() => {
+  if (injected) return;
+  const DEMO = [{
+    Question_ID:"DEMO_001",
+    Set_Code:"DEMO",
+    Domain:"Decision OS",
+    Subdomain:"Onboarding",
+    Difficulty:"1",
+    Question_Text:"DEMO MODE — No payload received from parent.\n\nFix: parent must postMessage({type:'ALCHEMIST_INJECT', payload:[...]})",
+    Correct_Answer:"OK",
+    Distractor_1:"—",
+    Distractor_2:"—",
+    Distractor_3:"—",
+    Correct_Direction:"UP",
+    Explanation_Short:"No injection arrived.",
+    Explanation_Long:"Check parent opener, origins, and popup permissions."
+  }];
+  applyInjectedData(DEMO);
+}, 1500);
+
+// boot UI
+(function boot(){
+  setLog("> SYSTEM BOOT", `> PARENT: ${PARENT_ORIGIN}`, "> WAITING FOR INJECTION…", "active");
+  updateHeader();
 })();
 </script>
 </body>

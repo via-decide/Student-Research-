@@ -109,8 +109,6 @@
       justify-content:center;
     }
     .card-q::-webkit-scrollbar{width:0px;}
-    .card-q sub{font-size:0.7em; vertical-align:-0.3em;}
-    .card-q sup{font-size:0.7em; vertical-align:0.5em;}
 
     .chiprow{display:flex; flex-wrap:wrap; gap:8px; justify-content:center;}
     .chip{
@@ -216,16 +214,16 @@
 
 <script>
 /* ============================
-   ALCHEMIST SYNC PATCH v1.0
+   ALCHEMIST SYNC (SAME ORIGIN)
    - Input:  localStorage["ALCHEMIST_INJECTED_DATA"]
    - Output: localStorage["ALCHEMIST_RESULTS"]
-   - Optional: postMessage + BroadcastChannel
+   - Debug:  localStorage["ALCHEMIST_DEBUG_CHILD"]
 ============================ */
 const ALCHEMIST_LS_KEY = "ALCHEMIST_INJECTED_DATA";
 const ALCHEMIST_RESULTS_KEY = "ALCHEMIST_RESULTS";
 const ALCHEMIST_SYNC_CHANNEL = "ALCHEMIST_SYNC";
+const ALCHEMIST_DEBUG_CHILD = "ALCHEMIST_DEBUG_CHILD";
 
-/* optional realtime channel */
 let bc = null;
 try { bc = new BroadcastChannel(ALCHEMIST_SYNC_CHANNEL); } catch(e){ bc = null; }
 
@@ -236,15 +234,12 @@ function safeJSONParse(raw){
 function writeResultsToHost(payload){
   try{
     localStorage.setItem(ALCHEMIST_RESULTS_KEY, JSON.stringify(payload));
-    // notify other tabs quickly
     if (bc) bc.postMessage({ type:"ALCHEMIST_RESULTS", payload });
-    // notify opener (if opened via window.open)
     if (window.opener && !window.opener.closed) {
-      window.opener.postMessage({ type:"ALCHEMIST_RESULTS", payload }, "*");
+      // same-origin targetOrigin can be location.origin
+      window.opener.postMessage({ type:"ALCHEMIST_RESULTS", payload }, location.origin);
     }
-  }catch(e){
-    // no-op: storage might be blocked in some privacy modes
-  }
+  }catch(e){}
 }
 
 let INJECTED_DATA = [];
@@ -289,10 +284,6 @@ function escapeHTML(str){
     .replaceAll("'","&#039;");
 }
 
-/* 4-choice mapping:
-   correctDir => Correct_Answer
-   other dirs => Distractor_1/2/3 (order)
-*/
 function buildOptionMap(q){
   const correctDir = normDir(q.Correct_Direction);
   const correctAns = (q.Correct_Answer || "").trim() || "—";
@@ -546,7 +537,6 @@ function answer(chosenDir){
 function makeResultsPayload(){
   const total = RAW_DATA.length;
   const accuracy = total ? Math.round((correctCount / total) * 100) : 0;
-
   return {
     version: "1.0",
     accuracy,
@@ -554,7 +544,6 @@ function makeResultsPayload(){
     correctCount,
     total,
     finishedAt: new Date().toISOString(),
-    // keep answered for PDF / audit; parent can ignore if too heavy
     answered
   };
 }
@@ -562,8 +551,7 @@ function makeResultsPayload(){
 function flushResultsOnce(){
   if (didWriteResults) return;
   didWriteResults = true;
-  const payload = makeResultsPayload();
-  writeResultsToHost(payload);
+  writeResultsToHost(makeResultsPayload());
 }
 
 function renderResults(){
@@ -573,7 +561,7 @@ function renderResults(){
 
   setLog("> RUN COMPLETE", `> SCORE: ${correctCount}/${total} (${pct}%)`, `> EXPORT AVAILABLE`, "primary");
 
-  // *** SYNC FIX: write results immediately on completion ***
+  // SYNC: write results on completion
   flushResultsOnce();
 
   const card = document.createElement("div");
@@ -603,17 +591,12 @@ function renderResults(){
   els.stack.appendChild(card);
 
   document.getElementById("btn-pdf").onclick = exportPDF;
-  document.getElementById("btn-retry").onclick = () => {
-    idx = 0; xp = 0; correctCount = 0; answered = [];
-    didWriteResults = false;
-    render();
-  };
+  document.getElementById("btn-retry").onclick = () => { idx = 0; xp = 0; correctCount = 0; answered = []; didWriteResults = false; render(); };
   document.getElementById("btn-close").onclick = () => window.close();
 }
 
 async function exportPDF(){
   try{
-    // ensure results exist even if user exports then closes fast
     flushResultsOnce();
 
     const { jsPDF } = window.jspdf;
@@ -666,12 +649,17 @@ function truncate(s, n){
   return (t.length <= n) ? t : (t.slice(0, n-1) + "…");
 }
 
-/* failsafe: if user closes tab right after completion */
+// failsafe
 window.addEventListener("beforeunload", () => {
   if (idx >= RAW_DATA.length) flushResultsOnce();
 });
 
 (function boot(){
+  // debug handshake: proves this file loaded
+  try{
+    localStorage.setItem(ALCHEMIST_DEBUG_CHILD, JSON.stringify({ loadedAt: new Date().toISOString(), href: location.href }));
+  }catch(e){}
+
   els.gyro.classList.add("active");
   setLog("> SYSTEM BOOT", `> INJECTED: ${INJECTED_DATA.length} ITEMS`, "> STARTING QUIZ...", "active");
   updateHeader();

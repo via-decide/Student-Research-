@@ -436,7 +436,12 @@
         </div>
 
         <div style="height:10px"></div>
-        <button class="btn btn-mini btn-full btn-pro" onclick="launchAlchemistQuiz()">QUIZ (ALCHEMIST)</button>
+        <button class="btn btn-mini btn-full btn-pro" onclick="launchAlchemistQuiz()">QUIZ (ALCHEMIST)
+        </button>
+
+        <div style="height:10px"></div>
+        <!-- New button: direct redirect to Alchemist app -->
+        <button class="btn btn-mini btn-full btn-pro" onclick="redirectToAlchemistApp()">OPEN ALCHEMIST APP</button>
 
         <div style="height:10px"></div>
         <button class="btn btn-mini btn-full" onclick="safeCall('openSynthesisSlide')">SYNTHESIS</button>
@@ -908,6 +913,12 @@ function launchAlchemistQuiz(){
     console.error(e);
     showToast("QUIZ FAILED");
   }
+}
+
+// New: Simple redirect to Alchemist app
+function redirectToAlchemistApp(){
+  // Use configured QUIZ_URL to open in new tab
+  window.open(QUIZ_URL, "_blank");
 }
 
 /* =========================================

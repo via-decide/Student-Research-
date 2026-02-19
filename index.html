@@ -440,9 +440,10 @@
   <script>
 /* =========================================
    DECISION RESEARCH ENGINE + UPGRADES v1.1
-   + ALCHEMIST QUIZ INTEGRATION v1.0
-   - Creates Alchemist JSON on click
+   + ALCHEMIST QUIZ INTEGRATION v1.0 (PATCHED)
+   - Writes Alchemist JSON on click
    - Opens alchemist.html (same folder)
+   - Fixes Research PDF context (decision meta + synthesis, no dilution)
 ========================================= */
 
 /* ====== ALCHEMIST INJECTION KEY ====== */
@@ -685,7 +686,6 @@ function confidenceFor(source) {
 }
 
 /* ---------- External actions ---------- */
-const AMZN_TAG = "decideos-21";
 function openYouTubeSearch(topic) {
   const q = encodeURIComponent((topic || "") + " explained");
   window.open(`https://www.youtube.com/results?search_query=${q}`, '_blank');
@@ -696,8 +696,9 @@ function openWikipedia(title){
 }
 
 /* =========================================
-ALCHEMIST QUIZ INTEGRATION
-- builds a quick quiz from research nodes
+ALCHEMIST QUIZ INTEGRATION (PATCHED)
+- true 4-choice directional mapping
+- 3 distractors always
 - stores to localStorage under ALCHEMIST_LS_KEY
 - opens alchemist.html (same folder)
 ========================================= */
@@ -706,42 +707,74 @@ function buildAlchemistPayloadFromResearch(nodes, { maxQ = 12 } = {}) {
   const out = [];
   const now = Date.now();
 
-  function pick2Distractors(allTitles, correctTitle){
-    const pool = allTitles.filter(t => t && t !== correctTitle);
-    // shuffle
-    for (let i = pool.length - 1; i > 0; i--) {
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
+      [a[i], a[j]] = [a[j], a[i]];
     }
-    return [pool[0] || "—", pool[1] || "—"];
-  }
-  function dirByIndex(i){
-    const dirs = ["UP","RIGHT","LEFT","DOWN"];
-    return dirs[i % dirs.length];
+    return a;
   }
 
-  const titles = list.map(n => normalizeText(n?.title || "")).filter(Boolean);
+  function pickNDistractors(allTitles, correctTitle, n = 3) {
+    const pool = allTitles.filter(t => t && t !== correctTitle);
+    const s = shuffle(pool);
+    const picked = s.slice(0, n);
+    while (picked.length < n) picked.push("—");
+    return picked;
+  }
+
+  const titles = list
+    .map(n => normalizeText(n?.title || ""))
+    .filter(Boolean);
+
+  const DIRECTIONS = ["UP", "RIGHT", "LEFT", "DOWN"];
 
   list.forEach((n, i) => {
-    const title = normalizeText(n?.title || `Node ${i+1}`);
+    const title = normalizeText(n?.title || `Node ${i + 1}`);
     const sents = splitIntoSentences(n?.summary || "");
-    const qText = sents[0] || (n?.summary ? normalizeText(n.summary).slice(0, 140) : "");
-    const prompt = qText
-      ? `Which node best matches this summary snippet?\n\n“${qText}”`
+    const snippet =
+      sents[0] ||
+      (n?.summary ? normalizeText(n.summary).slice(0, 180) : "");
+
+    const prompt = snippet
+      ? `Which node best matches this summary snippet?\n\n“${snippet}”`
       : `Which node is this?`;
 
-    const [d1, d2] = pick2Distractors(titles, title);
+    const [d1, d2, d3] = pickNDistractors(titles, title, 3);
+
+    const dirOrder = shuffle(DIRECTIONS);
+
+    const optionByDir = {};
+    optionByDir[dirOrder[0]] = title;
+    optionByDir[dirOrder[1]] = d1;
+    optionByDir[dirOrder[2]] = d2;
+    optionByDir[dirOrder[3]] = d3;
+
+    const correctDir =
+      Object.keys(optionByDir).find(k => optionByDir[k] === title) || "UP";
+
     out.push({
-      Question_ID: `R_${now}_${String(i+1).padStart(3,"0")}`,
+      Question_ID: `R_${now}_${String(i + 1).padStart(3, "0")}`,
       Set_Code: "RESEARCH",
       Domain: "Decision Research",
       Subdomain: normalizeText(n?.sourceName || n?.source || "wiki").toUpperCase(),
-      Difficulty: String(Math.min(5, Math.max(1, Math.round((wordCount(n?.summary || "") / 120) || 2)))),
+      Difficulty: String(
+        Math.min(5, Math.max(1, Math.round((wordCount(n?.summary || "") / 120) || 2)))
+      ),
       Question_Text: prompt,
+
       Correct_Answer: title,
       Distractor_1: d1,
       Distractor_2: d2,
-      Correct_Direction: dirByIndex(i),
+      Distractor_3: d3,
+      Correct_Direction: correctDir,
+
+      Option_UP: optionByDir.UP,
+      Option_RIGHT: optionByDir.RIGHT,
+      Option_LEFT: optionByDir.LEFT,
+      Option_DOWN: optionByDir.DOWN,
+
       Explanation_Short: "Pick the node title that matches the summary snippet.",
       Explanation_Long: (n?.url ? `Source: ${n.url}` : "Source: (none)")
     });
@@ -757,7 +790,6 @@ function launchAlchemistQuiz(){
     const payload = buildAlchemistPayloadFromResearch(nodes, { maxQ: 12 });
     localStorage.setItem(ALCHEMIST_LS_KEY, JSON.stringify(payload));
     showToast("QUIZ READY");
-    // Open in same folder
     window.open("alchemist.html", "_blank");
   }catch(e){
     console.error(e);
@@ -1694,168 +1726,274 @@ function renderEndSlide(){
 }
 
 /* =========================================
-PDF: Classic Research PDF
+PDF: Classic Research PDF (PATCHED: context + synthesis, no dilution)
 ========================================= */
 function sanitizeForPDF(text){
   return normalizeText(text).replace(/[^\x00-\xFF]/g, "");
 }
 async function generateResearchPDF() {
-  if (!ENGINE_STATE.research_nodes || ENGINE_STATE.research_nodes.length === 0) return showToast("NO RESEARCH TO EXPORT");
+  if (!ENGINE_STATE.research_nodes || ENGINE_STATE.research_nodes.length === 0) {
+    return showToast("NO RESEARCH TO EXPORT");
+  }
+
   showToast("GENERATING PDF...");
+
   try {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 18;
-    const contentWidth = pageWidth - (2 * margin);
-    const addFooter = (pageNum, totalPages) => {
-      doc.setFontSize(7);
-      doc.setTextColor(150,150,150);
-      doc.text(`viadecide.com | Page ${pageNum} of ${totalPages}`, pageWidth/2, pageHeight - 8, { align: 'center' });
-      const timestamp = new Date().toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short', timeZone:'Asia/Kolkata' });
-      doc.setFontSize(6);
-      doc.text(`Generated: ${timestamp}`, margin, pageHeight - 8);
-    };
+    const margin = 40;
+    const contentWidth = pageWidth - margin * 2;
+
+    const firstNode = ENGINE_STATE.research_nodes[0];
+    const decisionMeta = firstNode?.decisionMeta || {};
+    const synthesis = ENGINE_STATE.synthesis || null;
 
     let pageNum = 1;
-    const totalPages = ENGINE_STATE.research_nodes.length + 1;
 
-    doc.setFontSize(26);
+    function footer() {
+      doc.setFontSize(9);
+      doc.setTextColor(140);
+      doc.text(`decide.engine • Page ${pageNum}`, pageWidth / 2, pageHeight - 24, { align: "center" });
+      doc.setFontSize(8);
+      doc.text(
+        `Generated: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`,
+        margin,
+        pageHeight - 24
+      );
+    }
+
+    function ensureSpace(y, needed = 40){
+      if (y + needed <= pageHeight - 60) return y;
+      doc.addPage();
+      pageNum++;
+      return 60;
+    }
+
+    /* ===== Cover ===== */
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(28);
     doc.setTextColor(255, 103, 31);
-    doc.text("RESEARCH JOURNEY", pageWidth / 2, 52, { align: 'center' });
+    doc.text("Decision Research Brief", pageWidth / 2, 90, { align: "center" });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.setTextColor(80);
+    doc.text(`${ENGINE_STATE.research_nodes.length} nodes`, pageWidth / 2, 114, { align: "center" });
+
+    let y = 160;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(20);
+    doc.text("Decision Context", margin, y);
+    y += 18;
+
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(11);
-    doc.setTextColor(0, 200, 100);
-    doc.text("Powered by decide.engine", pageWidth / 2, 64, { align: 'center' });
+    const ctxLines = [
+      `Decision: ${decisionMeta.decision || "N/A"}`,
+      `Time horizon: ${decisionMeta.time || "N/A"}`,
+      `Stake: ${decisionMeta.stake || "N/A"}`,
+      `Success metric: ${decisionMeta.success || "N/A"}`,
+      `Options: ${decisionMeta.options || "N/A"}`
+    ];
+    ctxLines.forEach(line => {
+      const lines = doc.splitTextToSize(sanitizeForPDF(line), contentWidth);
+      lines.forEach(L => {
+        y = ensureSpace(y, 18);
+        doc.text(L, margin, y);
+        y += 14;
+      });
+    });
 
-    doc.setDrawColor(220,220,220);
-    doc.setLineWidth(0.5);
-    doc.rect(margin, 86, contentWidth, 34);
+    y += 18;
 
-    doc.setFontSize(10);
-    doc.setTextColor(60,60,60);
-    doc.text(`Total Nodes: ${ENGINE_STATE.research_nodes.length}`, pageWidth / 2, 98, { align: 'center' });
-    doc.text(`Primary Source: ${ENGINE_STATE.research_nodes[0]?.sourceName || 'Local'}`, pageWidth / 2, 106, { align: 'center' });
-    doc.text(`Export Date: ${new Date().toLocaleDateString('en-IN', { timeZone:'Asia/Kolkata' })}`, pageWidth / 2, 114, { align: 'center' });
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("Index", margin, y);
+    y += 16;
 
-    addFooter(pageNum, totalPages);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    ENGINE_STATE.research_nodes.forEach((n, i) => {
+      const line = `${i + 1}. ${sanitizeForPDF(n.title || "Untitled")}`;
+      const lines = doc.splitTextToSize(line, contentWidth);
+      lines.forEach(L => {
+        y = ensureSpace(y, 18);
+        doc.text(L, margin, y);
+        y += 14;
+      });
+    });
 
+    footer();
+
+    /* ===== Nodes ===== */
     ENGINE_STATE.research_nodes.forEach((node, index) => {
       doc.addPage();
       pageNum++;
-      const title = sanitizeForPDF(node.title);
-      const summaryRaw = sanitizeForPDF(node.summary);
-      const takeaways = extractTakeaways(summaryRaw, 4).map(sanitizeForPDF);
 
-      let y = 22;
+      let y2 = 70;
 
-      doc.setFillColor(0, 200, 100);
-      doc.circle(margin + 7, y + 3, 7, 'F');
-      doc.setFontSize(10);
-      doc.setTextColor(255,255,255);
-      doc.setFont(undefined, 'bold');
-      doc.text(String(index + 1), margin + 7, y + 5, { align: 'center' });
-      doc.setFont(undefined, 'normal');
+      const title = sanitizeForPDF(node.title || "Untitled");
+      const src = sanitizeForPDF(node.sourceName || "Local");
+      const conf = sanitizeForPDF(node.confidence || "High");
+      const url = sanitizeForPDF(node.url || "");
 
-      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
       doc.setTextColor(255, 103, 31);
-      doc.setFont(undefined, 'bold');
-      const titleLines = doc.splitTextToSize(title, contentWidth - 18);
-      doc.text(titleLines, margin + 18, y);
-      y += titleLines.length * 7 + 6;
+      const tLines = doc.splitTextToSize(`${index + 1}. ${title}`, contentWidth);
+      doc.text(tLines, margin, y2);
+      y2 += tLines.length * 18;
 
-      doc.setFont(undefined, 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(120,120,120);
-      doc.text(`Source: ${node.sourceName || "Local"}`, margin, y);
-      y += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(110);
+      doc.text(`Source: ${src} • Confidence: ${conf}`, margin, y2);
+      y2 += 16;
 
-      if (node.categories && node.categories.length > 0) {
-        const cats = sanitizeForPDF(node.categories.slice(0,4).join(' • '));
-        const catLines = doc.splitTextToSize(cats, contentWidth);
-        doc.text(catLines, margin, y);
-        y += catLines.length * 4.5 + 4;
+      if (url) {
+        const uLines = doc.splitTextToSize(`URL: ${url}`, contentWidth);
+        uLines.forEach(L => {
+          y2 = ensureSpace(y2, 18);
+          doc.text(L, margin, y2);
+          y2 += 12;
+        });
+        y2 += 6;
       }
 
-      doc.setDrawColor(220,220,220);
-      doc.setLineWidth(0.5);
-      doc.line(margin, y, pageWidth - margin, y);
-      y += 8;
+      const takeaways = extractTakeaways(node.summary || "", 4).map(sanitizeForPDF);
 
-      doc.setFontSize(10);
-      doc.setTextColor(40,40,40);
-      doc.setFont(undefined, 'bold');
-      doc.text("Key takeaways", margin, y);
-      y += 6;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(20);
+      doc.text("Key takeaways", margin, y2);
+      y2 += 14;
 
-      doc.setFont(undefined, 'normal');
-      doc.setFontSize(9.8);
-      takeaways.forEach(t => {
-        const lines = doc.splitTextToSize(`• ${t}`, contentWidth);
-        lines.forEach(line => {
-          if (y < pageHeight - 34) {
-            doc.text(line, margin, y);
-            y += 5.6;
-          }
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.setTextColor(40);
+
+      if (takeaways.length) {
+        takeaways.forEach(tw => {
+          const lines = doc.splitTextToSize(`• ${tw}`, contentWidth);
+          lines.forEach(L => {
+            y2 = ensureSpace(y2, 18);
+            doc.text(L, margin, y2);
+            y2 += 14;
+          });
+          y2 += 2;
         });
-        y += 1.5;
-      });
-
-      y += 3;
-      doc.setDrawColor(235,235,235);
-      doc.setLineWidth(0.3);
-      doc.line(margin, y, pageWidth - margin, y);
-      y += 8;
-
-      doc.setFontSize(10);
-      doc.setTextColor(40,40,40);
-      doc.setFont(undefined, 'bold');
-      doc.text("Summary", margin, y);
-      y += 6;
-
-      doc.setFont(undefined, 'normal');
-      let summaryText = summaryRaw;
-      const maxChars = 2400;
-      if (summaryText.length > maxChars) {
-        summaryText = summaryText.slice(0, maxChars);
-        const lastPeriod = summaryText.lastIndexOf('.');
-        if (lastPeriod > maxChars - 250) summaryText = summaryText.slice(0, lastPeriod + 1);
+      } else {
+        y2 = ensureSpace(y2, 18);
+        doc.text("• (No takeaways extracted)", margin, y2);
+        y2 += 14;
       }
 
-      const paras = [];
-      const sents = splitIntoSentences(summaryText);
-      if (sents.length) {
-        paras.push(sents.slice(0,1).join(" "));
-        for (let i=1;i<sents.length;i+=3) paras.push(sents.slice(i,i+3).join(" "));
-      } else paras.push(summaryText);
+      y2 += 8;
 
-      const lineH = 5.6;
-      paras.forEach(p => {
-        const lines = doc.splitTextToSize(p, contentWidth);
-        lines.forEach(line => {
-          if (y < pageHeight - 34) {
-            doc.text(line, margin, y);
-            y += lineH;
-          }
-        });
-        y += 3;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(20);
+      doc.text("Summary", margin, y2);
+      y2 += 14;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.setTextColor(40);
+
+      const summary = sanitizeForPDF(node.summary || "");
+      const sLines = doc.splitTextToSize(summary || "No summary available.", contentWidth);
+      sLines.forEach(L => {
+        y2 = ensureSpace(y2, 18);
+        doc.text(L, margin, y2);
+        y2 += 14;
       });
 
-      addFooter(pageNum, totalPages);
+      footer();
     });
 
-    const now = new Date();
-    const dateStr = now.toISOString().slice(0, 10);
-    doc.save(`research-journey-${dateStr}.pdf`);
-    showToast("PDF DOWNLOADED!");
-  } catch (error) {
-    console.error('PDF generation error:', error);
-    showToast("PDF GENERATION FAILED");
+    /* ===== Synthesis ===== */
+    if (synthesis && (synthesis.thesis || (synthesis.topTakeaways && synthesis.topTakeaways.length) || synthesis.implications || synthesis.next || synthesis.recommendation || synthesis.contradictions)) {
+      doc.addPage();
+      pageNum++;
+
+      let y3 = 70;
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.setTextColor(255, 103, 31);
+      doc.text("Synthesis", margin, y3);
+      y3 += 22;
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(20);
+
+      function block(title, text){
+        if (!text || !String(text).trim()) return;
+        y3 = ensureSpace(y3, 40);
+        doc.text(title, margin, y3);
+        y3 += 14;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(11);
+        doc.setTextColor(40);
+        const lines = doc.splitTextToSize(sanitizeForPDF(String(text)), contentWidth);
+        lines.forEach(L => {
+          y3 = ensureSpace(y3, 18);
+          doc.text(L, margin, y3);
+          y3 += 14;
+        });
+        y3 += 10;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.setTextColor(20);
+      }
+
+      block("Working thesis", synthesis.thesis);
+
+      if (Array.isArray(synthesis.topTakeaways) && synthesis.topTakeaways.length) {
+        y3 = ensureSpace(y3, 40);
+        doc.text("Top takeaways", margin, y3);
+        y3 += 14;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(11);
+        doc.setTextColor(40);
+        synthesis.topTakeaways.forEach(tw => {
+          const lines = doc.splitTextToSize(`• ${sanitizeForPDF(tw)}`, contentWidth);
+          lines.forEach(L => {
+            y3 = ensureSpace(y3, 18);
+            doc.text(L, margin, y3);
+            y3 += 14;
+          });
+          y3 += 2;
+        });
+        y3 += 10;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.setTextColor(20);
+      }
+
+      block("Contradictions / open questions", synthesis.contradictions);
+      block("Decision implications", synthesis.implications);
+      block("Next research nodes", synthesis.next);
+      block("Recommendation signals", synthesis.recommendation);
+
+      footer();
+    }
+
+    doc.save(`decision-research-${new Date().toISOString().slice(0,10)}.pdf`);
+    showToast("PDF DOWNLOADED");
+  } catch (e) {
+    console.error("PDF generation error:", e);
+    showToast("PDF FAILED");
   }
 }
 
 /* =========================================
-DECISION PRO UI PDF
+DECISION PRO UI PDF (unchanged)
 ========================================= */
 function buildDecisionProModel() {
   const nodes = ENGINE_STATE.research_nodes || [];
@@ -2189,4 +2327,4 @@ function boot(){
 boot();
   </script>
 </body>
-  </html>
+        </html>

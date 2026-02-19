@@ -405,14 +405,22 @@
           <button class="btn btn-mini btn-pdf" onclick="safeCall('generateResearchPDF')">PDF</button>
           <button class="btn btn-mini btn-pro" onclick="safeCall('generateDecisionProUIPDF')">DECISION PDF</button>
         </div>
+
+        <div style="height:10px"></div>
+        <button class="btn btn-mini btn-full btn-pro" onclick="launchAlchemistQuiz()">QUIZ (ALCHEMIST)</button>
+
         <div style="height:10px"></div>
         <button class="btn btn-mini btn-full" onclick="safeCall('openSynthesisSlide')">SYNTHESIS</button>
+
         <div style="height:10px"></div>
         <button class="btn btn-mini btn-full" onclick="toggleNotesPanel()">NOTES</button>
+
         <div style="height:10px"></div>
         <button class="btn btn-mini btn-full btn-pro" onclick="saveCurrentProjectPrompt()">SAVE PROJECT</button>
+
         <div style="height:10px"></div>
         <button class="btn btn-mini btn-full" onclick="shareCurrentProject()">SHARE LINK</button>
+
         <div style="height:10px"></div>
         <button class="btn btn-mini btn-full btn-muted" onclick="openProjectPicker()">LOAD PROJECT</button>
       </div>
@@ -432,10 +440,13 @@
   <script>
 /* =========================================
    DECISION RESEARCH ENGINE + UPGRADES v1.1
-   - Landing/Welcome + default examples
-   - Project persistence + share links
-   - GitHub Pages fallback
+   + ALCHEMIST QUIZ INTEGRATION v1.0
+   - Creates Alchemist JSON on click
+   - Opens alchemist.html (same folder)
 ========================================= */
+
+/* ====== ALCHEMIST INJECTION KEY ====== */
+const ALCHEMIST_LS_KEY = "ALCHEMIST_INJECTED_DATA";
 
 /* ---------- robust fetch helpers ---------- */
 async function fetchJSON(url, { timeoutMs = 9000 } = {}) {
@@ -685,6 +696,76 @@ function openWikipedia(title){
 }
 
 /* =========================================
+ALCHEMIST QUIZ INTEGRATION
+- builds a quick quiz from research nodes
+- stores to localStorage under ALCHEMIST_LS_KEY
+- opens alchemist.html (same folder)
+========================================= */
+function buildAlchemistPayloadFromResearch(nodes, { maxQ = 12 } = {}) {
+  const list = Array.isArray(nodes) ? nodes.slice(0, maxQ) : [];
+  const out = [];
+  const now = Date.now();
+
+  function pick2Distractors(allTitles, correctTitle){
+    const pool = allTitles.filter(t => t && t !== correctTitle);
+    // shuffle
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    return [pool[0] || "—", pool[1] || "—"];
+  }
+  function dirByIndex(i){
+    const dirs = ["UP","RIGHT","LEFT","DOWN"];
+    return dirs[i % dirs.length];
+  }
+
+  const titles = list.map(n => normalizeText(n?.title || "")).filter(Boolean);
+
+  list.forEach((n, i) => {
+    const title = normalizeText(n?.title || `Node ${i+1}`);
+    const sents = splitIntoSentences(n?.summary || "");
+    const qText = sents[0] || (n?.summary ? normalizeText(n.summary).slice(0, 140) : "");
+    const prompt = qText
+      ? `Which node best matches this summary snippet?\n\n“${qText}”`
+      : `Which node is this?`;
+
+    const [d1, d2] = pick2Distractors(titles, title);
+    out.push({
+      Question_ID: `R_${now}_${String(i+1).padStart(3,"0")}`,
+      Set_Code: "RESEARCH",
+      Domain: "Decision Research",
+      Subdomain: normalizeText(n?.sourceName || n?.source || "wiki").toUpperCase(),
+      Difficulty: String(Math.min(5, Math.max(1, Math.round((wordCount(n?.summary || "") / 120) || 2)))),
+      Question_Text: prompt,
+      Correct_Answer: title,
+      Distractor_1: d1,
+      Distractor_2: d2,
+      Correct_Direction: dirByIndex(i),
+      Explanation_Short: "Pick the node title that matches the summary snippet.",
+      Explanation_Long: (n?.url ? `Source: ${n.url}` : "Source: (none)")
+    });
+  });
+
+  return out;
+}
+
+function launchAlchemistQuiz(){
+  const nodes = ENGINE_STATE?.research_nodes || [];
+  if (!nodes.length) return showToast("NO NODES FOR QUIZ");
+  try{
+    const payload = buildAlchemistPayloadFromResearch(nodes, { maxQ: 12 });
+    localStorage.setItem(ALCHEMIST_LS_KEY, JSON.stringify(payload));
+    showToast("QUIZ READY");
+    // Open in same folder
+    window.open("alchemist.html", "_blank");
+  }catch(e){
+    console.error(e);
+    showToast("QUIZ FAILED");
+  }
+}
+
+/* =========================================
 MULTI-SOURCE RESEARCH ENGINE
 ========================================= */
 const WIKI_ENGINE = {
@@ -764,7 +845,7 @@ const WIKI_ENGINE = {
 };
 
 /* =========================================
-PROJECT PERSISTENCE + SHARE LINKS (UPGRADE #3)
+PROJECT PERSISTENCE + SHARE LINKS
 ========================================= */
 const PROJECTS_INDEX_KEY = "decideos_projects_v1";
 const LAST_PROJECT_KEY = "decideos_last_project_id_v1";
@@ -773,7 +854,6 @@ const PROJECT_PREFIX = "decideos_project_";
 let CURRENT_PROJECT = null;
 
 function uid(){
-  // simple uid for static app
   return "p_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
 }
 function getProjectsIndex(){
@@ -803,13 +883,11 @@ function listProjects(){
   return Object.values(idx).sort((a,b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
 }
 function serializeProjectForShare(project){
-  // base64url
   const json = JSON.stringify(project);
   const b64 = btoa(unescape(encodeURIComponent(json)));
   return b64.replaceAll("+","-").replaceAll("/","_").replaceAll("=","");
 }
 function deserializeProjectFromShare(payload){
-  // restore padding
   let b64 = payload.replaceAll("-","+").replaceAll("_","/");
   while (b64.length % 4) b64 += "=";
   const json = decodeURIComponent(escape(atob(b64)));
@@ -818,13 +896,11 @@ function deserializeProjectFromShare(payload){
 function shareCurrentProject(){
   const p = buildProjectFromCurrentState();
   if (!p) return showToast("NOTHING TO SHARE");
-  // Save first (so it persists)
   saveProjectToStorage(p);
   CURRENT_PROJECT = p;
 
   const payload = serializeProjectForShare(p);
   const url = `${location.origin}${location.pathname}#p=${payload}`;
-  // try clipboard
   if (navigator.clipboard?.writeText) {
     navigator.clipboard.writeText(url).then(() => showToast("LINK COPIED"));
   } else {
@@ -834,7 +910,6 @@ function shareCurrentProject(){
 function openProjectPicker(){
   const projects = listProjects();
   if (!projects.length) return showToast("NO SAVED PROJECTS");
-  // simple prompt picker for single-file simplicity
   const menu = projects.map((p,i) => `${i+1}. ${p.name} (${(p.updatedAt||"").slice(0,19).replace("T"," ")})`).join("\n");
   const choice = window.prompt("Load project by number:\n" + menu, "1");
   const n = parseInt(choice || "", 10);
@@ -889,18 +964,15 @@ function buildProjectFromCurrentState(){
 }
 function loadProjectIntoApp(project){
   CURRENT_PROJECT = project;
-  // restore notes
   const notes = project?.engineState?.notes ?? "";
   localStorage.setItem(NOTES_KEY, notes);
   const ta = document.getElementById("notes-text");
   if (ta) ta.value = notes;
 
-  // restore engine state
   ENGINE_STATE.cuisines_detected = ["research"];
   ENGINE_STATE.research_nodes = Array.isArray(project?.engineState?.research_nodes) ? project.engineState.research_nodes : [];
   ENGINE_STATE.synthesis = project?.engineState?.synthesis || null;
 
-  // open deck from stored nodes (no network)
   if (ENGINE_STATE.research_nodes.length) {
     openStoredDeck(ENGINE_STATE.research_nodes, ENGINE_STATE.synthesis);
   } else {
@@ -917,7 +989,6 @@ function importShareLinkPrompt(){
   if (payload.startsWith("p=")) payload = payload.slice(2);
   try{
     const project = deserializeProjectFromShare(payload);
-    // Save imported
     if (!project.id) project.id = uid();
     if (!project.name) project.name = "Imported Project";
     project.updatedAt = new Date().toISOString();
@@ -932,7 +1003,7 @@ function importShareLinkPrompt(){
 }
 
 /* =========================================
-DEFAULT RESEARCH EXAMPLES (UPGRADE #1)
+DEFAULT RESEARCH EXAMPLES
 ========================================= */
 const DEFAULT_EXAMPLES = [
   {
@@ -1064,10 +1135,9 @@ let currentIdx = 0;
 let currentDecisionContext = null;
 
 /* =========================================
-Landing / Welcome (UPGRADE #2 + #4)
+Landing / Welcome
 ========================================= */
 function goHome(){
-  // Always return to landing (GitHub Pages-friendly)
   closeUIPanel();
   closeNotesPanel();
   renderLanding();
@@ -1105,6 +1175,7 @@ function renderLanding(){
           <p><strong>Save nodes / projects:</strong> Quick Panel → <strong>SAVE PROJECT</strong> (stores on device).</p>
           <p><strong>Share / collaborate:</strong> Quick Panel → <strong>SHARE LINK</strong> (sends a URL with project embedded).</p>
           <p><strong>PDFs:</strong> From any node → Research PDF, or Quick Panel → Decision PDF.</p>
+          <p><strong>Quiz:</strong> Quick Panel → <strong>QUIZ (ALCHEMIST)</strong> (builds quiz from nodes).</p>
           <p style="margin-bottom:0"><strong>Notes:</strong> Tap the notes icon (✎) → SAVE.</p>
         </div>
       </div>
@@ -1159,7 +1230,6 @@ function continueLastProject(){
   showToast("CONTINUED");
 }
 function openTool(){
-  // Start interactive tool at lobby
   CURRENT_PROJECT = null;
   renderLobby();
   updateUIPanel();
@@ -1376,7 +1446,7 @@ function saveDecisionMeta() {
   const m = document.getElementById('meta-success')?.value?.trim() || "";
   const o = document.getElementById('meta-options')?.value?.trim() || "";
   currentDecisionContext.decisionMeta = { decision: d, time: t, stake: s, success: m, options: o };
-  ENGINE_STATE.research_nodes = [currentDecisionContext]; // reset deck to first node
+  ENGINE_STATE.research_nodes = [currentDecisionContext];
   ENGINE_STATE.synthesis = null;
   currentDecisionContext = null;
   buildResearchDeckFromNetwork(ENGINE_STATE.research_nodes[0]);
@@ -1392,7 +1462,7 @@ function skipDecisionMeta() {
   autosaveProjectIfPossible();
 }
 
-/* ---------- Build deck from network (existing behavior) ---------- */
+/* ---------- Build deck from network ---------- */
 async function buildResearchDeckFromNetwork(seedNode){
   const container = document.getElementById('master-container');
   container.innerHTML = "";
@@ -1402,7 +1472,6 @@ async function buildResearchDeckFromNetwork(seedNode){
 
   renderNodeSlide(seedNode, true);
 
-  // preload up to 6 related nodes (network)
   if (seedNode.links && seedNode.links.length) {
     const linkNames = seedNode.links.slice(0, 6).map(l => l.name).filter(Boolean);
     for (const name of linkNames) {
@@ -1425,7 +1494,6 @@ function openStoredDeck(nodes, synthesis){
   ENGINE_STATE.research_nodes = nodes || [];
   ENGINE_STATE.synthesis = synthesis || null;
 
-  // render each as slide
   ENGINE_STATE.research_nodes.forEach((n, idx) => renderNodeSlide(n, idx === 0));
   renderEndSlide();
   goToSlide(0);
@@ -1483,10 +1551,10 @@ function renderNodeSlide(node, isFirst){
         </div>
 
         <div class="final-actions" style="margin-top:10px;">
+          <button class="btn btn-full btn-pro" onclick="launchAlchemistQuiz()">QUIZ (ALCHEMIST)</button>
           <button class="btn btn-full btn-pro" onclick="saveCurrentProjectPrompt()">SAVE PROJECT</button>
           <button class="btn btn-full" onclick="shareCurrentProject()">SHARE LINK</button>
         </div>
-
       </div>
       <div class="nav-hint"><span>Swipe up/down: slides</span><span>Tap ☰: panel</span></div>
     </div>
@@ -1613,6 +1681,7 @@ function renderEndSlide(){
         <button class="btn btn-full btn-pro" onclick="openSynthesisSlide()">SYNTHESIS</button>
         <button class="btn btn-full btn-pdf" onclick="generateResearchPDF()">RESEARCH PDF</button>
         <button class="btn btn-full btn-pro" onclick="generateDecisionProUIPDF()">DECISION PDF</button>
+        <button class="btn btn-full btn-pro" onclick="launchAlchemistQuiz()">QUIZ (ALCHEMIST)</button>
         <button class="btn btn-full" onclick="renderSearchSlide()">NEW SEARCH</button>
         <button class="btn btn-full btn-muted" onclick="goHome()">← WELCOME</button>
       </div>
@@ -2091,16 +2160,14 @@ function goToSlide(idx) {
 }
 
 /* =========================================
-Boot: share-link detection + GitHub Pages fallback
+Boot: share-link detection + fallback
 ========================================= */
 function boot(){
   try{
-    // If share hash exists -> auto load
     const hash = (location.hash || "").trim();
     if (hash.startsWith("#p=")) {
       const payload = hash.slice(3);
       const project = deserializeProjectFromShare(payload);
-      // persist it locally
       if (!project.id) project.id = uid();
       if (!project.name) project.name = "Shared Project";
       project.updatedAt = new Date().toISOString();
@@ -2111,13 +2178,10 @@ function boot(){
       initVoice();
       return;
     }
-
-    // Default GitHub Pages fallback -> landing
     renderLanding();
     initVoice();
   }catch(e){
     console.error(e);
-    // fallback hard
     renderLanding();
     showToast("BOOT RECOVERED");
   }
@@ -2125,4 +2189,4 @@ function boot(){
 boot();
   </script>
 </body>
-          </html>
+  </html>

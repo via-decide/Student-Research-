@@ -4,16 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>| decide.engine | Decision Research</title>
-
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#0a0a0a" />
   <meta name="background-color" content="#0a0a0a" />
-
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="decide.engine" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="application-name" content="decide.engine" />
   <meta name="description" content="Voice-first decision engine with decision-linked research" />
@@ -26,24 +23,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-
-  <!--
-    This file reproduces the parent application for the decision research engine with
-    Path B quiz integration. The original implementation opened a relative
-    ``alchemist.html`` file via ``window.open("alchemist.html", "_blank")``,
-    which only works when that file exists at the site root. In deployments
-    where the build output directory does not include ``alchemist.html``, the
-    relative link resolves to a 404 or is rewritten to the SPA ``index.html``.
-
-    To avoid broken links and make the parent code resilient to different
-    deployment configurations, two constants are defined below:
-
-    * ``QUIZ_URL`` — the absolute URL to the ``alchemist.html`` file. When
-      ``alchemist.html`` is deployed at the project root, it points to
-      ``https://student-research.pages.dev/alchemist.html``. If you host
-      Alchemist on a separate Pages project, update this constant accordingly.
-    * ``QUIZ_ORIGIN`` — derived from ``QUIZ_URL``. Used for cross-origin message checks.
-  -->
 
   <style>
     :root{
@@ -74,9 +53,9 @@
       display:flex;flex-direction:column;background:var(--brand-bg);
       transition:transform .5s cubic-bezier(.2,.8,.2,1);will-change:transform;
     }
-    .main-slide.prev{transform:translateY(-100%);}  
-    .main-slide.active{transform:translateY(0);z-index:10;}  
-    .main-slide.next{transform:translateY(100%);z-index:20;}  
+    .main-slide.prev{transform:translateY(-100%);}
+    .main-slide.active{transform:translateY(0);z-index:10;}
+    .main-slide.next{transform:translateY(100%);z-index:20;}
     .slide-header{
       padding:18px 20px;border-left:3px solid var(--brand-orange);
       height:66px;flex-shrink:0;z-index:10;
@@ -99,9 +78,9 @@
       transition:transform .3s ease,opacity .3s ease;
       overflow-y:auto;-webkit-overflow-scrolling:touch;
     }
-    .sub-slide.opt-active{z-index:30;opacity:1;pointer-events:auto;transform:translateX(0);}  
-    .sub-slide.static{z-index:30;opacity:1;pointer-events:auto;transform:none;}  
-    .sub-slide.article-view{justify-content:flex-start;padding-top:16px;padding-bottom:170px;}  
+    .sub-slide.opt-active{z-index:30;opacity:1;pointer-events:auto;transform:translateX(0);}
+    .sub-slide.static{z-index:30;opacity:1;pointer-events:auto;transform:none;}
+    .sub-slide.article-view{justify-content:flex-start;padding-top:16px;padding-bottom:170px;}
     h1{
       font-size:1.9rem;margin:0 0 12px 0;line-height:1.1;letter-spacing:-1px;
       color:var(--brand-orange);
@@ -113,24 +92,24 @@
       background:#0f1318;border:1px solid #2a3342;border-radius:14px;
       padding:14px;margin-bottom:12px;box-shadow:0 10px 25px rgba(0,0,0,.25);
     }
-    .context-top{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;}  
+    .context-top{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;}
     .thumb{
       width:64px;height:64px;border-radius:14px;background:#111;border:1px solid #2a3342;
       flex:0 0 auto;overflow:hidden;display:flex;align-items:center;justify-content:center;
       color:#666;font-family:var(--font-tech);font-size:.7rem;
     }
-    .thumb img{width:100%;height:100%;object-fit:cover;display:block;}  
-    .context-title-wrap{flex:1;min-width:0;}  
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+    .context-title-wrap{flex:1;min-width:0;}
     .context-kicker{
       font-family:var(--font-tech);font-size:.65rem;letter-spacing:1px;
       color:#9aa3b2;text-transform:uppercase;margin-bottom:6px;
     }
-    .context-stats{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}  
+    .context-stats{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
     .stat-chip{
       font-family:var(--font-tech);font-size:.65rem;background:#0b0f14;color:#c0c7d6;
       padding:6px 10px;border-radius:999px;border:1px solid #2a3342;
     }
-    .wiki-meta{display:flex;gap:8px;margin:10px 0 6px;flex-wrap:wrap;}  
+    .wiki-meta{display:flex;gap:8px;margin:10px 0 6px;flex-wrap:wrap;}
     .meta-chip{
       font-family:var(--font-tech);font-size:.65rem;background:#0b0f14;color:#c0c7d6;
       padding:6px 10px;border-radius:999px;border:1px solid #2a3342;
@@ -145,18 +124,18 @@
       touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
       user-select:text;-webkit-user-select:text;
     }
-    .takeaways ul{margin:8px 0 0 18px;padding:0;}  
-    .takeaways li{color:#d6dde8;line-height:1.55;margin:6px 0;font-size:.95rem;}  
+    .takeaways ul{margin:8px 0 0 18px;padding:0;}
+    .takeaways li{color:#d6dde8;line-height:1.55;margin:6px 0;font-size:.95rem;}
     .wiki-summary{
       font-size:.98rem;color:#d6dde8;line-height:1.75;max-height:36vh;overflow-y:auto;
       padding:14px;background:#0b0f14;border-radius:12px;border:1px solid #2a3342;
       touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
       user-select:text;-webkit-user-select:text;
     }
-    .wiki-summary p{margin:0 0 12px 0;}  
-    .wiki-summary p:last-child{margin-bottom:0;}  
-    .wiki-summary .lead{color:#fff;font-weight:800;margin-bottom:12px;}  
-    .wiki-summary .muted{color:#a8b3c2;}  
+    .wiki-summary p{margin:0 0 12px 0;}
+    .wiki-summary p:last-child{margin-bottom:0;}
+    .wiki-summary .lead{color:#fff;font-weight:800;margin-bottom:12px;}
+    .wiki-summary .muted{color:#a8b3c2;}
     .nav-hint{
       margin-top:14px;padding-top:12px;border-top:1px solid #222a36;
       font-family:var(--font-tech);font-size:.7rem;color:#666;
@@ -170,71 +149,71 @@
       display:flex;justify-content:space-between;border-bottom:1px dashed #333;padding:10px 0;
       font-family:var(--font-tech);font-size:.8rem;
     }
-    .input-key{color:#888;text-transform:uppercase;}  
-    .input-val{color:var(--accent-go);font-weight:bold;text-align:right;}  
-    .final-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px;}  
+    .input-key{color:#888;text-transform:uppercase;}
+    .input-val{color:var(--accent-go);font-weight:bold;text-align:right;}
+    .final-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px;}
     .btn{
       background:#1c1c1c;color:#fff;border:1px solid #2a3342;
       padding:14px 14px;border-radius:12px;font-weight:700;text-align:center;
       font-size:.82rem;cursor:pointer;display:block;width:100%;box-sizing:border-box;
       transition:transform .12s ease,opacity .2s ease;
     }
-    .btn:active{transform:scale(.99);opacity:.95;}  
-    .btn-full{grid-column:span 2;}  
-    .btn-wa{background:#25D366;color:#000;border:none;}  
-    .btn-pdf{background:#d32f2f;border:none;color:#fff;}  
-    .btn-yt{background:#ff0000;border:none;}  
-    .btn-pro{background:#121a24;border:1px solid rgba(0,230,118,.65);color:#00e676;}  
-    .btn-muted{background:#0b0f14;border:1px solid #2a3342;color:#9aa3b2;}  
-    .lobby-container{display:flex;flex-direction:column;gap:15px;padding:30px;height:100%;justify-content:center;}  
+    .btn:active{transform:scale(.99);opacity:.95;}
+    .btn-full{grid-column:span 2;}
+    .btn-wa{background:#25D366;color:#000;border:none;}
+    .btn-pdf{background:#d32f2f;border:none;color:#fff;}
+    .btn-yt{background:#ff0000;border:none;}
+    .btn-pro{background:#121a24;border:1px solid rgba(0,230,118,.65);color:#00e676;}
+    .btn-muted{background:#0b0f14;border:1px solid #2a3342;color:#9aa3b2;}
+    .lobby-container{display:flex;flex-direction:column;gap:15px;padding:30px;height:100%;justify-content:center;}
     .cuisine-btn{
       background:#161616;border:1px solid #2a3342;color:#c0c7d6;
       padding:18px;font-size:1.05rem;font-weight:800;text-transform:uppercase;border-radius:14px;
       transition:all .2s;
     }
-    .cuisine-btn.selected{background:var(--brand-orange);color:#000;border-color:var(--brand-orange);}  
+    .cuisine-btn.selected{background:var(--brand-orange);color:#000;border-color:var(--brand-orange);}
     #search-input{
       width:100%;background:#0b0f14;border:1px solid #2a3342;color:#fff;
       padding:14px;font-size:1.05rem;border-radius:12px;margin-bottom:14px;outline:none;text-align:center;
     }
-    .source-toggle{display:flex;gap:10px;margin-bottom:18px;justify-content:center;flex-wrap:wrap;}  
+    .source-toggle{display:flex;gap:10px;margin-bottom:18px;justify-content:center;flex-wrap:wrap;}
     .source-chip{
       padding:8px 14px;border:1px solid #2a3342;border-radius:999px;font-size:.7rem;color:#9aa3b2;
       font-family:var(--font-tech);cursor:pointer;transition:all .2s;background:#0b0f14;
     }
-    .source-chip.active{background:#121a24;color:var(--accent-go);border-color:var(--accent-go);}  
-    #depth-fill{position:fixed;right:0;top:0;bottom:0;width:4px;background:#333;z-index:900;height:0%;transition:height .05s linear;}  
+    .source-chip.active{background:#121a24;color:var(--accent-go);border-color:var(--accent-go);}
+    #depth-fill{position:fixed;right:0;top:0;bottom:0;width:4px;background:#333;z-index:900;height:0%;transition:height .05s linear;}
     .toast-msg{
       position:fixed;bottom:100px;left:50%;transform:translateX(-50%);
       background:#0b0f14;color:#00e676;padding:10px 18px;border:1px solid #00e676;border-radius:999px;
       font-size:.8rem;opacity:0;pointer-events:none;transition:opacity .25s;z-index:3000;font-family:var(--font-tech);
     }
-    .toast-msg.visible{opacity:1;}  
+    .toast-msg.visible{opacity:1;}
     #mic-toggle{
       position:fixed;bottom:20px;left:20px;width:52px;height:52px;background:#0b0f14;border-radius:50%;
       display:flex;align-items:center;justify-content:center;border:1px solid #2a3342;z-index:2000;cursor:pointer;
       box-shadow:0 12px 24px rgba(0,0,0,.35);
     }
-    #mic-toggle.listening{border-color:var(--accent-go);box-shadow:0 0 18px rgba(0,230,118,.25);}  
-    #mic-toggle svg{fill:#9aa3b2;width:24px;}  
+    #mic-toggle.listening{border-color:var(--accent-go);box-shadow:0 0 18px rgba(0,230,118,.25);}
+    #mic-toggle svg{fill:#9aa3b2;width:24px;}
 
     /* ===== PRO UI PDF (hidden renderer) ===== */
     #pro-ui-root{
       position:fixed;left:-99999px;top:0;width:794px;background:#0b1220;color:#fff;
       font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;z-index:-1;
     }
-    .proui-doc{width:794px;background:#0b1220;}  
+    .proui-doc{width:794px;background:#0b1220;}
     .proui-page{
       padding:36px 40px;min-height:1123px;border-top:1px solid rgba(255,255,255,.10);position:relative;
     }
-    .proui-page:first-child{border-top:none;}  
+    .proui-page:first-child{border-top:none;}
     .proui-wm{
       position:absolute;left:0;right:0;bottom:18px;text-align:center;font-size:11px;letter-spacing:.18em;
       text-transform:uppercase;color:rgba(255,255,255,.35);
     }
-    .proui-title{font-size:34px;font-weight:900;letter-spacing:-.03em;margin:0;color:#6ee7ff;}  
-    .proui-subtitle{margin:10px 0 0;color:rgba(255,255,255,.70);line-height:1.5;}  
-    .proui-pillrow{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;}  
+    .proui-title{font-size:34px;font-weight:900;letter-spacing:-.03em;margin:0;color:#6ee7ff;}
+    .proui-subtitle{margin:10px 0 0;color:rgba(255,255,255,.70);line-height:1.5;}
+    .proui-pillrow{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
     .proui-pill{
       border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);padding:7px 10px;border-radius:999px;
       font-size:12px;color:rgba(255,255,255,.78);
@@ -243,15 +222,15 @@
       background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
       border:1px solid rgba(255,255,255,.10);border-radius:18px;padding:16px;
     }
-    .proui-h{margin:0 0 8px 0;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.72);}  
-    .proui-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}  
-    .proui-kv{display:grid;grid-template-columns:1fr auto;gap:8px 10px;font-size:13px;}  
-    .proui-k{color:rgba(255,255,255,.65);}  
-    .proui-v{font-weight:800;color:rgba(255,255,255,.90);text-align:right;}  
-    .proui-list{margin:0;padding-left:18px;color:rgba(255,255,255,.86);line-height:1.55;font-size:13px;}  
-    .proui-list li{margin:6px 0;}  
-    .proui-nodeTitle{font-size:18px;font-weight:900;margin:0;color:#a78bfa;}  
-    .proui-small{font-size:12px;color:rgba(255,255,255,.70);line-height:1.5;}  
+    .proui-h{margin:0 0 8px 0;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.72);}
+    .proui-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .proui-kv{display:grid;grid-template-columns:1fr auto;gap:8px 10px;font-size:13px;}
+    .proui-k{color:rgba(255,255,255,.65);}
+    .proui-v{font-weight:800;color:rgba(255,255,255,.90);text-align:right;}
+    .proui-list{margin:0;padding-left:18px;color:rgba(255,255,255,.86);line-height:1.55;font-size:13px;}
+    .proui-list li{margin:6px 0;}
+    .proui-nodeTitle{font-size:18px;font-weight:900;margin:0;color:#a78bfa;}
+    .proui-small{font-size:12px;color:rgba(255,255,255,.70);line-height:1.5;}
 
     /* ===== Quick Panel ===== */
     #panel-toggle{
@@ -260,8 +239,8 @@
       cursor:pointer;box-shadow:0 12px 24px rgba(0,0,0,.35);transition:transform .12s ease,opacity .2s ease;
       -webkit-tap-highlight-color:transparent;touch-action:manipulation;
     }
-    #panel-toggle:active{transform:scale(.98);opacity:.95;}  
-    #panel-toggle svg{width:22px;height:22px;fill:#9aa3b2;}  
+    #panel-toggle:active{transform:scale(.98);opacity:.95;}
+    #panel-toggle svg{width:22px;height:22px;fill:#9aa3b2;}
     #ui-panel-overlay{
       position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:2490;opacity:0;pointer-events:none;transition:opacity .2s ease;
     }
@@ -273,8 +252,8 @@
       display:flex;flex-direction:column;box-shadow:-18px 0 40px rgba(0,0,0,.55);
       touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
     }
-    #ui-panel.open{transform:translateX(0);}  
-    #ui-panel-overlay.open{opacity:1;pointer-events:auto;}  
+    #ui-panel.open{transform:translateX(0);}
+    #ui-panel-overlay.open{opacity:1;pointer-events:auto;}
     .panel-header{
       padding:16px 16px 12px;border-bottom:1px solid #222a36;display:flex;align-items:center;justify-content:space-between;gap:10px;
       background:linear-gradient(180deg,rgba(10,10,10,.98),rgba(10,10,10,.75));backdrop-filter:blur(6px);
@@ -283,7 +262,7 @@
       font-family:var(--font-tech);font-size:.75rem;color:var(--brand-orange);letter-spacing:1px;font-weight:800;text-transform:uppercase;
       display:flex;align-items:center;gap:8px;min-width:0;
     }
-    .panel-body{padding:14px 16px 18px;overflow-y:auto;flex:1;user-select:text;-webkit-user-select:text;}  
+    .panel-body{padding:14px 16px 18px;overflow-y:auto;flex:1;user-select:text;-webkit-user-select:text;}
     .panel-section{
       background:#0f1318;border:1px solid #2a3342;border-radius:14px;padding:14px;margin-bottom:12px;
       box-shadow:0 10px 25px rgba(0,0,0,.22);
@@ -292,12 +271,12 @@
       display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed #222a36;
       font-family:var(--font-tech);font-size:.74rem;
     }
-    .panel-row:last-child{border-bottom:none;padding-bottom:0;}  
-    .panel-k{color:#9aa3b2;text-transform:uppercase;letter-spacing:.6px;}  
-    .panel-v{color:#d6dde8;font-weight:800;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}  
-    .panel-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}  
-    .panel-actions .btn{margin:0;}  
-    .btn-mini{padding:12px 12px;border-radius:12px;font-size:.78rem;}  
+    .panel-row:last-child{border-bottom:none;padding-bottom:0;}
+    .panel-k{color:#9aa3b2;text-transform:uppercase;letter-spacing:.6px;}
+    .panel-v{color:#d6dde8;font-weight:800;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .panel-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+    .panel-actions .btn{margin:0;}
+    .btn-mini{padding:12px 12px;border-radius:12px;font-size:.78rem;}
     .panel-footer{
       padding:12px 16px 16px;border-top:1px solid #222a36;
       background:linear-gradient(180deg,rgba(10,10,10,.65),rgba(10,10,10,.98));backdrop-filter:blur(6px);
@@ -314,12 +293,12 @@
       box-shadow:0 12px 24px rgba(0,0,0,.35);transition:transform .12s ease,opacity .2s ease;
       -webkit-tap-highlight-color:transparent;touch-action:manipulation;
     }
-    #notes-toggle:active{transform:scale(.98);opacity:.95;}  
-    #notes-toggle svg{width:22px;height:22px;fill:#9aa3b2;}  
+    #notes-toggle:active{transform:scale(.98);opacity:.95;}
+    #notes-toggle svg{width:22px;height:22px;fill:#9aa3b2;}
     #notes-panel-overlay{
       position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:2685;opacity:0;pointer-events:none;transition:opacity .2s ease;
     }
-    #notes-panel-overlay.open{opacity:1;pointer-events:auto;}  
+    #notes-panel-overlay.open{opacity:1;pointer-events:auto;}
     #notes-panel{
       position:fixed;left:50%;bottom:0;transform:translate(-50%,102%);
       width:min(720px,96vw);height:min(62vh,520px);
@@ -329,8 +308,8 @@
       box-shadow:0 -18px 40px rgba(0,0,0,.55);
       touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
     }
-    #notes-panel.open{transform:translate(-50%,0);}  
-    .notes-body{padding:14px 16px 18px;overflow:auto;flex:1;user-select:text;-webkit-user-select:text;}  
+    #notes-panel.open{transform:translate(-50%,0);}
+    .notes-body{padding:14px 16px 18px;overflow:auto;flex:1;user-select:text;-webkit-user-select:text;}
     #notes-text{
       width:100%;min-height:240px;resize:none;padding:12px;border-radius:12px;border:1px solid #2a3342;
       background:#0b0f14;color:#fff;font-size:.92rem;line-height:1.55;box-sizing:border-box;outline:none;
@@ -349,10 +328,7 @@
   <div id="toast" class="toast-msg"></div>
 
   <div id="mic-toggle" onclick="toggleListenMode()">
-    <svg viewBox="0 0 24 24">
-      <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66-1.34 3 3 3z"/>
-      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-    </svg>
+    <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66-1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
   </div>
 
   <!-- Quick Panel Toggle -->
@@ -431,12 +407,7 @@
         </div>
 
         <div style="height:10px"></div>
-        <button class="btn btn-mini btn-full btn-pro" onclick="launchAlchemistQuiz()">QUIZ (ALCHEMIST)
-        </button>
-
-        <div style="height:10px"></div>
-        <!-- New button: direct redirect to Alchemist app -->
-        <button class="btn btn-mini btn-full btn-pro" onclick="redirectToAlchemistApp()">OPEN ALCHEMIST APP</button>
+        <button class="btn btn-mini btn-full btn-pro" onclick="launchAlchemistQuiz()">QUIZ (ALCHEMIST)</button>
 
         <div style="height:10px"></div>
         <button class="btn btn-mini btn-full" onclick="safeCall('openSynthesisSlide')">SYNTHESIS</button>
@@ -466,19 +437,13 @@
   <!-- Hidden Pro UI render root -->
   <div id="pro-ui-root" aria-hidden="true"></div>
 
-<script>
+  <script>
 /* =========================================
-   DECISION RESEARCH ENGINE + UPGRADES v1.2
-   + ALCHEMIST QUIZ INTEGRATION v1.1 (Cross-Origin)
-   + XP SYNC + SYNTHESIS SCORE (PATCHED)
+   DECISION RESEARCH ENGINE + UPGRADES v1.1
+   + ALCHEMIST QUIZ INTEGRATION v1.0
+   - Creates Alchemist JSON on click
+   - Opens alchemist.html (same folder)
 ========================================= */
-
-/* ====== CONFIGURATION FOR ALCHEMIST (PATH B) ====== */
-// ``QUIZ_URL`` defines the full URL for the Alchemist quiz file. Update this
-// constant if your quiz is hosted on a different domain.
-const QUIZ_URL = "https://student-research.pages.dev/alchemist.html";
-// ``QUIZ_ORIGIN`` is derived from QUIZ_URL and used for message validation.
-const QUIZ_ORIGIN = new URL(QUIZ_URL).origin;
 
 /* ====== ALCHEMIST INJECTION KEY ====== */
 const ALCHEMIST_LS_KEY = "ALCHEMIST_INJECTED_DATA";
@@ -498,12 +463,12 @@ async function fetchJSON(url, { timeoutMs = 9000 } = {}) {
 
 /* ---------- helpers ---------- */
 function escapeHTML(str){
-  return String(str ?? "")
+  return (str ?? "")
     .replaceAll("&","&amp;")
     .replaceAll("<","&lt;")
     .replaceAll(">","&gt;")
-    .replaceAll('"','&quot;')
-    .replaceAll("'","&#39;");
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
 }
 function normalizeText(text){
   return (text || "").replace(/\s+/g, " ").replace(/\u00AD/g, "").trim();
@@ -511,10 +476,7 @@ function normalizeText(text){
 function splitIntoSentences(text){
   const t = normalizeText(text);
   if(!t) return [];
-  return t
-    .split(/(?<=[.!?])\s+(?=[A-Z0-9"“(])/g)
-    .map(s => s.trim())
-    .filter(Boolean);
+  return t.split(/(?<=[.!?])\s+(?=[A-Z0-9"“(])/g).map(s => s.trim()).filter(Boolean);
 }
 function extractTakeaways(summary, max = 4){
   const s = splitIntoSentences(summary);
@@ -555,103 +517,7 @@ function showToast(m) {
 function toggleListenMode(){ showToast("VOICE: NOT IMPLEMENTED"); }
 function initVoice(){}
 
-/* =========================================
-STATE
-========================================= */
-let ENGINE_STATE = {
-  cuisines_detected: [],
-  items_detected: {},
-  session_weights: {},
-  active_filters: [],
-  research_history: [],
-  research_nodes: [],
-  synthesis: null,
-
-  // PATCH: store quiz stats and synthesis score
-  quizStats: null,
-  synthesisScore: null
-};
-
-let slideElements = [];
-let currentIdx = 0;
-let currentDecisionContext = null;
-
-/* =========================================
-Cross-Origin Quiz Sync (Handshake and Messaging)
-========================================= */
-// Variables to manage the cross-origin quiz window and handshake
-let QUIZ_WIN = null;
-let QUIZ_HANDSHAKE_OK = false;
-let QUIZ_LAST_PAYLOAD = null;
-
-// Build a session bundle containing current research data (nodes, synthesis, notes)
-function buildAlchemistSessionBundle(){
-  const nodes = ENGINE_STATE?.research_nodes || [];
-  const synthesis = ENGINE_STATE?.synthesis || null;
-  const notes = (document.getElementById("notes-text")?.value ?? localStorage.getItem(NOTES_KEY) ?? "");
-  const project = CURRENT_PROJECT?.name || "";
-  return {
-    type: "ALCHEMIST_SESSION",
-    version: 1,
-    createdAt: Date.now(),
-    origin: location.origin,
-    project,
-    nodes,
-    synthesis,
-    notes
-  };
-}
-
-/* =========================================
-PATCH: XP Sync Watcher (localStorage fallback)
-========================================= */
-function checkAlchemistResults(){
-  const raw = localStorage.getItem("ALCHEMIST_RESULTS");
-  if(!raw) return;
-  try{
-    const data = JSON.parse(raw);
-    localStorage.removeItem("ALCHEMIST_RESULTS");
-    ENGINE_STATE.quizStats = data;
-    showToast(`QUIZ: ${data.accuracy}% • +${data.xp} XP`);
-    scoreSynthesis();
-    autosaveProjectIfPossible();
-    updateUIPanel();
-  }catch(e){}
-}
-setInterval(checkAlchemistResults, 1500);
-
-/* =========================================
-PATCH: Synthesis Scoring Logic
-========================================= */
-function scoreSynthesis(){
-  const quiz = ENGINE_STATE.quizStats;
-  if(!quiz) return;
-  let baseScore = Number(quiz.accuracy || 0);
-  if((ENGINE_STATE.research_nodes || []).length > 4) baseScore += 5;
-  if((ENGINE_STATE.synthesis?.topTakeaways || []).length >= 4) baseScore += 5;
-  ENGINE_STATE.synthesisScore = Math.min(100, baseScore);
-}
-
-/* ---------- Confidence helper ---------- */
-function confidenceFor(source) {
-  if (source === 'wiki' || source === 'travel') return 'High';
-  if (source === 'wikibooks') return 'Medium';
-  return 'Low';
-}
-
-/* ---------- External actions ---------- */
-function openYouTubeSearch(topic) {
-  const q = encodeURIComponent((topic || "") + " explained");
-  window.open(`https://www.youtube.com/results?search_query=${q}`, '_blank');
-}
-function openWikipedia(title){
-  const q = encodeURIComponent(title || "");
-  window.open(`https://en.wikipedia.org/wiki/Special:Search?search=${q}`, "_blank");
-}
-
-/* =========================================
-Quick Panel and Notes Management
-========================================= */
+/* ---------- Quick Panel ---------- */
 function isUIPanelOpen(){
   const p = document.getElementById('ui-panel');
   return !!(p && p.classList.contains('open'));
@@ -705,24 +571,18 @@ function updateUIPanel(){
   const timeEl = document.getElementById('panel-time');
   const hintEl = document.getElementById('panel-toast-hint');
   const projEl = document.getElementById('panel-project');
+
   const domain = (ENGINE_STATE?.cuisines_detected?.[0]) ? ENGINE_STATE.cuisines_detected[0] : "home";
   const nodes = Array.isArray(ENGINE_STATE?.research_nodes) ? ENGINE_STATE.research_nodes.length : 0;
   const activeSrc = (WIKI_ENGINE?.sources && WIKI_ENGINE?.activeSource) ? (WIKI_ENGINE.sources[WIKI_ENGINE.activeSource]?.name || "-") : "-";
   const lastNode = (nodes > 0) ? (ENGINE_STATE.research_nodes[nodes - 1]?.title || "-") : "-";
+
   if (domainEl) domainEl.textContent = String(domain).toUpperCase();
   if (slideEl) slideEl.textContent = (typeof currentIdx === 'number' ? `${currentIdx + 1}/${(slideElements?.length || 1)}` : "-");
   if (nodesEl) nodesEl.textContent = String(nodes);
   if (srcEl) srcEl.textContent = activeSrc ? String(activeSrc).toUpperCase() : "-";
   if (lastEl) lastEl.textContent = String(lastNode);
-  if (badgeEl){
-    if(ENGINE_STATE.synthesisScore){
-      badgeEl.textContent = `SCORE ${ENGINE_STATE.synthesisScore}`;
-    } else {
-      badgeEl.textContent = domain === 'research'
-        ? `NODES: ${nodes}`
-        : String(domain).toUpperCase();
-    }
-  }
+  if (badgeEl) badgeEl.textContent = domain === 'research' ? `NODES: ${nodes}` : String(domain).toUpperCase();
   if (timeEl) timeEl.textContent = nowIST();
   if (hintEl) hintEl.textContent = isUIPanelOpen() ? "Tap outside to close" : "Ready";
   if (projEl) projEl.textContent = CURRENT_PROJECT?.name ? CURRENT_PROJECT.name.toUpperCase() : "-";
@@ -817,121 +677,92 @@ setInterval(() => {
   updateNotesMeta();
 }, 1200);
 
+/* ---------- Confidence helper ---------- */
+function confidenceFor(source) {
+  if (source === 'wiki' || source === 'travel') return 'High';
+  if (source === 'wikibooks') return 'Medium';
+  return 'Low';
+}
+
+/* ---------- External actions ---------- */
+const AMZN_TAG = "decideos-21";
+function openYouTubeSearch(topic) {
+  const q = encodeURIComponent((topic || "") + " explained");
+  window.open(`https://www.youtube.com/results?search_query=${q}`, '_blank');
+}
+function openWikipedia(title){
+  const q = encodeURIComponent(title || "");
+  window.open(`https://en.wikipedia.org/wiki/Special:Search?search=${q}`, "_blank");
+}
+
 /* =========================================
-ALCHEMIST QUIZ INTEGRATION (UPGRADED 4-DIR)
-PATCH: replace builder with improved mapping
+ALCHEMIST QUIZ INTEGRATION
+- builds a quick quiz from research nodes
+- stores to localStorage under ALCHEMIST_LS_KEY
+- opens alchemist.html (same folder)
 ========================================= */
 function buildAlchemistPayloadFromResearch(nodes, { maxQ = 12 } = {}) {
   const list = Array.isArray(nodes) ? nodes.slice(0, maxQ) : [];
   const out = [];
   const now = Date.now();
-  function shuffle(arr) {
-    const a = arr.slice();
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  }
-  function pickNDistractors(allTitles, correctTitle, n = 3) {
+
+  function pick2Distractors(allTitles, correctTitle){
     const pool = allTitles.filter(t => t && t !== correctTitle);
-    const s = shuffle(pool);
-    const picked = s.slice(0, n);
-    while (picked.length < n) picked.push("—");
-    return picked;
+    // shuffle
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    return [pool[0] || "—", pool[1] || "—"];
   }
-  const titles = list
-    .map(n => normalizeText(n?.title || ""))
-    .filter(Boolean);
-  const DIRECTIONS = ["UP", "RIGHT", "LEFT", "DOWN"];
+  function dirByIndex(i){
+    const dirs = ["UP","RIGHT","LEFT","DOWN"];
+    return dirs[i % dirs.length];
+  }
+
+  const titles = list.map(n => normalizeText(n?.title || "")).filter(Boolean);
+
   list.forEach((n, i) => {
-    const title = normalizeText(n?.title || `Node ${i + 1}`);
+    const title = normalizeText(n?.title || `Node ${i+1}`);
     const sents = splitIntoSentences(n?.summary || "");
-    const snippet =
-      sents[0] ||
-      (n?.summary ? normalizeText(n.summary).slice(0, 180) : "");
-    const prompt = snippet
-      ? `Which node best matches this summary snippet?\n\n“${snippet}”`
-      : "Which node is this?";
-    const [d1, d2, d3] = pickNDistractors(titles, title, 3);
-    const dirOrder = shuffle(DIRECTIONS);
-    const optionByDir = {};
-    optionByDir[dirOrder[0]] = title;
-    optionByDir[dirOrder[1]] = d1;
-    optionByDir[dirOrder[2]] = d2;
-    optionByDir[dirOrder[3]] = d3;
-    const correctDir =
-      Object.keys(optionByDir).find(k => optionByDir[k] === title) || "UP";
+    const qText = sents[0] || (n?.summary ? normalizeText(n.summary).slice(0, 140) : "");
+    const prompt = qText
+      ? `Which node best matches this summary snippet?\n\n“${qText}”`
+      : `Which node is this?`;
+
+    const [d1, d2] = pick2Distractors(titles, title);
     out.push({
-      Question_ID: `R_${now}_${String(i + 1).padStart(3, "0")}`,
+      Question_ID: `R_${now}_${String(i+1).padStart(3,"0")}`,
       Set_Code: "RESEARCH",
       Domain: "Decision Research",
       Subdomain: normalizeText(n?.sourceName || n?.source || "wiki").toUpperCase(),
-      Difficulty: String(
-        Math.min(5, Math.max(1, Math.round((wordCount(n?.summary || "") / 120) || 2)))
-      ),
+      Difficulty: String(Math.min(5, Math.max(1, Math.round((wordCount(n?.summary || "") / 120) || 2)))),
       Question_Text: prompt,
       Correct_Answer: title,
       Distractor_1: d1,
       Distractor_2: d2,
-      Distractor_3: d3,
-      Correct_Direction: correctDir,
-      Option_UP: optionByDir.UP,
-      Option_RIGHT: optionByDir.RIGHT,
-      Option_LEFT: optionByDir.LEFT,
-      Option_DOWN: optionByDir.DOWN,
+      Correct_Direction: dirByIndex(i),
       Explanation_Short: "Pick the node title that matches the summary snippet.",
       Explanation_Long: (n?.url ? `Source: ${n.url}` : "Source: (none)")
     });
   });
+
   return out;
 }
 
-// Modified launcher: uses cross-origin handshake to send session & questions
 function launchAlchemistQuiz(){
   const nodes = ENGINE_STATE?.research_nodes || [];
   if (!nodes.length) return showToast("NO NODES FOR QUIZ");
   try{
-    const quizPayload = buildAlchemistPayloadFromResearch(nodes, { maxQ: 12 });
-    const sessionBundle = buildAlchemistSessionBundle();
-    QUIZ_LAST_PAYLOAD = {
-      type: "ALCHEMIST_INJECT",
-      version: 1,
-      quiz: quizPayload,
-      session: sessionBundle
-    };
-    QUIZ_HANDSHAKE_OK = false;
-    // Open or focus the quiz window
-    QUIZ_WIN = window.open(QUIZ_URL, "_blank");
-    if (!QUIZ_WIN) return showToast("POPUP BLOCKED");
-    showToast("OPENING ALCHEMIST...");
-    let tries = 0;
-    const tick = setInterval(() => {
-      tries++;
-      if (!QUIZ_WIN || QUIZ_WIN.closed) { clearInterval(tick); return; }
-      if (QUIZ_HANDSHAKE_OK) {
-        QUIZ_WIN.postMessage(QUIZ_LAST_PAYLOAD, QUIZ_ORIGIN);
-        clearInterval(tick);
-        showToast("SESSION SENT");
-        return;
-      }
-      // Ping the child window to prompt handshake
-      QUIZ_WIN.postMessage({ type:"ALCHEMIST_PING", t:Date.now() }, QUIZ_ORIGIN);
-      if (tries > 16) {
-        clearInterval(tick);
-        try{ QUIZ_WIN.postMessage(QUIZ_LAST_PAYLOAD, QUIZ_ORIGIN); }catch(e){}
-        showToast("SENT (NO ACK)");
-      }
-    }, 500);
+    const payload = buildAlchemistPayloadFromResearch(nodes, { maxQ: 12 });
+    localStorage.setItem(ALCHEMIST_LS_KEY, JSON.stringify(payload));
+    showToast("QUIZ READY");
+    // Open in same folder
+    window.open("alchemist.html", "_blank");
   }catch(e){
     console.error(e);
     showToast("QUIZ FAILED");
   }
-}
-
-// Optional: direct link to alchemist app (bypassing injection)
-function redirectToAlchemistApp(){
-  window.open(QUIZ_URL, "_blank");
 }
 
 /* =========================================
@@ -942,7 +773,7 @@ const WIKI_ENGINE = {
   cache: new Map(),
   sources: {
     wiki: { name: "WIKIPEDIA", api: "https://en.wikipedia.org/w/api.php", icon: "📚", description: "General knowledge encyclopedia" },
-    travel: { name: "WIKIVoyage", api: "https://en.wikivoyage.org/w/api.php", icon: "🗺️", description: "Travel guides and destinations" },
+    travel: { name: "WIKIVOYAGE", api: "https://en.wikivoyage.org/w/api.php", icon: "🗺️", description: "Travel guides and destinations" },
     wikibooks: { name: "WIKIBOOKS", api: "https://en.wikibooks.org/w/api.php", icon: "📖", description: "Educational textbooks" },
     wikinews: { name: "WIKINEWS", api: "https://en.wikinews.org/w/api.php", icon: "📰", description: "News articles" }
   },
@@ -983,6 +814,7 @@ const WIKI_ENGINE = {
       const firstKey = Object.keys(pages)[0];
       if (!firstKey || firstKey === "-1") throw new Error("Page not found");
       const page = pages[firstKey];
+
       const linksUrl = `${api}?origin=*&action=query&prop=links&titles=${encodeURIComponent(t)}&pllimit=20&plnamespace=0&format=json`;
       let links = [];
       try {
@@ -991,6 +823,7 @@ const WIKI_ENGINE = {
         const lk = Object.keys(lp)[0];
         links = (lk && lp[lk] && lp[lk].links) ? lp[lk].links.map(l => ({ name: l.title, ns: l.ns })) : [];
       } catch(e) { links = []; }
+
       const context = {
         title: page.title,
         summary: page.extract || "No summary available.",
@@ -1065,6 +898,7 @@ function shareCurrentProject(){
   if (!p) return showToast("NOTHING TO SHARE");
   saveProjectToStorage(p);
   CURRENT_PROJECT = p;
+
   const payload = serializeProjectForShare(p);
   const url = `${location.origin}${location.pathname}#p=${payload}`;
   if (navigator.clipboard?.writeText) {
@@ -1114,6 +948,7 @@ function buildProjectFromCurrentState(){
   const syn = ENGINE_STATE?.synthesis || null;
   const notes = (document.getElementById("notes-text")?.value ?? localStorage.getItem(NOTES_KEY) ?? "");
   if (!nodes.length && !syn && !notes) return null;
+
   const project = {
     id: CURRENT_PROJECT?.id || uid(),
     name: CURRENT_PROJECT?.name || (nodes[0]?.decisionMeta?.decision ? `Decision: ${nodes[0].decisionMeta.decision}` : "Decision Research"),
@@ -1122,9 +957,7 @@ function buildProjectFromCurrentState(){
     engineState: {
       research_nodes: nodes,
       synthesis: syn,
-      notes: notes,
-      quizStats: ENGINE_STATE.quizStats || null,
-      synthesisScore: ENGINE_STATE.synthesisScore || null
+      notes: notes
     }
   };
   return project;
@@ -1135,11 +968,11 @@ function loadProjectIntoApp(project){
   localStorage.setItem(NOTES_KEY, notes);
   const ta = document.getElementById("notes-text");
   if (ta) ta.value = notes;
+
   ENGINE_STATE.cuisines_detected = ["research"];
   ENGINE_STATE.research_nodes = Array.isArray(project?.engineState?.research_nodes) ? project.engineState.research_nodes : [];
   ENGINE_STATE.synthesis = project?.engineState?.synthesis || null;
-  ENGINE_STATE.quizStats = project?.engineState?.quizStats || null;
-  ENGINE_STATE.synthesisScore = project?.engineState?.synthesisScore || null;
+
   if (ENGINE_STATE.research_nodes.length) {
     openStoredDeck(ENGINE_STATE.research_nodes, ENGINE_STATE.synthesis);
   } else {
@@ -1286,6 +1119,22 @@ const DEFAULT_EXAMPLES = [
 ];
 
 /* =========================================
+STATE
+========================================= */
+let ENGINE_STATE = {
+  cuisines_detected: [],
+  items_detected: {},
+  session_weights: {},
+  active_filters: [],
+  research_history: [],
+  research_nodes: [],
+  synthesis: null
+};
+let slideElements = [];
+let currentIdx = 0;
+let currentDecisionContext = null;
+
+/* =========================================
 Landing / Welcome
 ========================================= */
 function goHome(){
@@ -1298,11 +1147,15 @@ function renderLanding(){
   container.innerHTML = "";
   slideElements = [];
   currentIdx = 0;
+
   const lastId = localStorage.getItem(LAST_PROJECT_KEY);
   const hasLast = !!(lastId && loadProjectFromStorage(lastId));
-  const examplesHtml = DEFAULT_EXAMPLES.map(ex =>
-    `<button class="cuisine-btn" onclick="openExample('${escapeHTML(ex.id)}')">${escapeHTML(ex.name)}</button>`
-  ).join("");
+  const examplesHtml = DEFAULT_EXAMPLES.map(ex => `
+    <button class="cuisine-btn" onclick="openExample('${escapeHTML(ex.id)}')">
+      ${escapeHTML(ex.name)}
+    </button>
+  `).join("");
+
   const section = document.createElement('section');
   section.className = "main-slide active";
   section.dataset.mode = "landing";
@@ -1314,6 +1167,7 @@ function renderLanding(){
     <div class="sub-slide static article-view">
       <h1>Decision Research</h1>
       <div class="primary-question">Start with examples, or open the tool and build your own research nodes.</div>
+
       <div class="context-panel">
         <div class="section-title" style="margin-top:0">How to use</div>
         <div style="color:#d6dde8; line-height:1.65;">
@@ -1325,16 +1179,21 @@ function renderLanding(){
           <p style="margin-bottom:0"><strong>Notes:</strong> Tap the notes icon (✎) → SAVE.</p>
         </div>
       </div>
+
       <div class="context-panel">
         <div class="section-title" style="margin-top:0">Try an example</div>
-        <div style="display:grid; gap:12px;">${examplesHtml}</div>
+        <div style="display:grid; gap:12px;">
+          ${examplesHtml}
+        </div>
       </div>
+
       <div class="final-actions">
         <button class="btn btn-full btn-pro" onclick="openTool()">OPEN TOOL</button>
         ${hasLast ? `<button class="btn btn-full" onclick="continueLastProject()">CONTINUE LAST PROJECT</button>` : `<button class="btn btn-full btn-muted" onclick="showToast('NO LAST PROJECT')">CONTINUE LAST PROJECT</button>`}
         <button class="btn btn-full" onclick="importShareLinkPrompt()">IMPORT SHARE LINK</button>
         <button class="btn btn-full btn-muted" onclick="openProjectPicker()">LOAD SAVED PROJECT</button>
       </div>
+
       <div class="nav-hint"><span>GitHub Pages mode</span><span>Tap ☰: panel</span></div>
     </div>
   `;
@@ -1344,11 +1203,10 @@ function renderLanding(){
   ENGINE_STATE.cuisines_detected = ["home"];
   ENGINE_STATE.research_nodes = [];
   ENGINE_STATE.synthesis = null;
-  ENGINE_STATE.quizStats = null;
-  ENGINE_STATE.synthesisScore = null;
   CURRENT_PROJECT = null;
   updateUIPanel();
 }
+
 function openExample(exampleId){
   const ex = DEFAULT_EXAMPLES.find(x => x.id === exampleId);
   if (!ex) return showToast("EXAMPLE NOT FOUND");
@@ -1386,6 +1244,7 @@ const FALLBACK_MENU = {
   "research": { label: "DECISION RESEARCH", categories: [] }
 };
 let RAW_DATA = FALLBACK_MENU;
+
 function renderLobby() {
   const container = document.getElementById('master-container');
   container.innerHTML = "";
@@ -1427,8 +1286,6 @@ function handleStart() {
   if (domain === "research") {
     ENGINE_STATE.research_nodes = [];
     ENGINE_STATE.synthesis = null;
-    ENGINE_STATE.quizStats = null;
-    ENGINE_STATE.synthesisScore = null;
     CURRENT_PROJECT = null;
     renderSearchSlide();
   } else {
@@ -1612,7 +1469,9 @@ async function buildResearchDeckFromNetwork(seedNode){
   slideElements = [];
   currentIdx = 0;
   ENGINE_STATE.cuisines_detected = ["research"];
+
   renderNodeSlide(seedNode, true);
+
   if (seedNode.links && seedNode.links.length) {
     const linkNames = seedNode.links.slice(0, 6).map(l => l.name).filter(Boolean);
     for (const name of linkNames) {
@@ -1630,9 +1489,11 @@ function openStoredDeck(nodes, synthesis){
   container.innerHTML = "";
   slideElements = [];
   currentIdx = 0;
+
   ENGINE_STATE.cuisines_detected = ["research"];
   ENGINE_STATE.research_nodes = nodes || [];
   ENGINE_STATE.synthesis = synthesis || null;
+
   ENGINE_STATE.research_nodes.forEach((n, idx) => renderNodeSlide(n, idx === 0));
   renderEndSlide();
   goToSlide(0);
@@ -1645,10 +1506,12 @@ function renderNodeSlide(node, isFirst){
   const section = document.createElement('section');
   section.className = isFirst ? "main-slide active" : "main-slide next";
   section.dataset.mode = "node";
+
   const words = wordCount(node.summary || "");
   const rt = readingTimeMins(words);
   const takeaways = extractTakeaways(node.summary || "", 4);
   const cats = (node.categories || []).slice(0,5);
+
   section.innerHTML = `
     <div class="slide-header">
       <span class="header-title">NODE</span>
@@ -1657,9 +1520,7 @@ function renderNodeSlide(node, isFirst){
     <div class="sub-slide static article-view">
       <div class="context-panel">
         <div class="context-top">
-          <div class="thumb">
-            ${node.thumbnail ? `<img src="${escapeHTML(node.thumbnail)}" alt="">` : 'THUMB'}
-          </div>
+          <div class="thumb">${node.thumbnail ? `<img src="${escapeHTML(node.thumbnail)}" alt="">` : 'THUMB'}</div>
           <div class="context-title-wrap">
             <div class="context-kicker">Research node • Confidence: ${escapeHTML(node.confidence || 'High')}</div>
             <h1 style="margin-bottom:6px;">${escapeHTML(node.title || 'Untitled')}</h1>
@@ -1670,20 +1531,25 @@ function renderNodeSlide(node, isFirst){
             </div>
           </div>
         </div>
+
         <div class="wiki-meta">
           ${cats.map(c => `<span class="meta-chip">${escapeHTML(c)}</span>`).join("")}
         </div>
+
         <div class="section-title">Key takeaways</div>
         <div class="takeaways">
           <ul>${takeaways.map(t => `<li>${escapeHTML(t)}</li>`).join("")}</ul>
         </div>
+
         <div class="section-title">Summary</div>
         <div class="wiki-summary">${formatSummaryHTML(node.summary || "")}</div>
+
         <div class="final-actions" style="margin-top:12px;">
           <button class="btn btn-full btn-yt" onclick="openYouTubeSearch('${escapeHTML(node.title || "")}')">YOUTUBE</button>
           <button class="btn btn-full btn-pro" onclick="openWikipedia('${escapeHTML(node.title || "")}')">OPEN</button>
           <button class="btn btn-full btn-pdf" onclick="generateResearchPDF()">RESEARCH PDF</button>
         </div>
+
         <div class="final-actions" style="margin-top:10px;">
           <button class="btn btn-full btn-pro" onclick="launchAlchemistQuiz()">QUIZ (ALCHEMIST)</button>
           <button class="btn btn-full btn-pro" onclick="saveCurrentProjectPrompt()">SAVE PROJECT</button>
@@ -1724,6 +1590,7 @@ function openSynthesisSlide() {
   const allTakeaways = [];
   ENGINE_STATE.research_nodes.forEach(n => allTakeaways.push(...extractTakeaways(n.summary || "", 4)));
   const top = allTakeaways.slice(0, 5);
+
   const container = document.getElementById('master-container');
   const synSlide = document.createElement('section');
   synSlide.className = "main-slide next";
@@ -1775,7 +1642,6 @@ function saveSynthesis(){
     next: document.getElementById('syn-next')?.value?.trim() || '',
     recommendation: document.getElementById('syn-rec')?.value?.trim() || ''
   };
-  scoreSynthesis();
   showToast("SAVED");
   autosaveProjectIfPossible();
 }
@@ -1802,6 +1668,7 @@ function renderEndSlide(){
     <div class="sub-slide static article-view">
       <h1>Export</h1>
       <div class="primary-question">Review synthesis, then export your journey.</div>
+
       <div class="context-panel">
         <div class="section-title" style="margin-top:0">What next?</div>
         <div style="color:#d6dde8; line-height:1.6;">
@@ -1809,6 +1676,7 @@ function renderEndSlide(){
           <p style="margin-bottom:0">Then export as either a classic Research PDF or a Decision Brief PDF.</p>
         </div>
       </div>
+
       <div class="final-actions">
         <button class="btn btn-full btn-pro" onclick="openSynthesisSlide()">SYNTHESIS</button>
         <button class="btn btn-full btn-pdf" onclick="generateResearchPDF()">RESEARCH PDF</button>
@@ -1817,6 +1685,7 @@ function renderEndSlide(){
         <button class="btn btn-full" onclick="renderSearchSlide()">NEW SEARCH</button>
         <button class="btn btn-full btn-muted" onclick="goHome()">← WELCOME</button>
       </div>
+
       <div class="nav-hint"><span>Swipe up/down: slides</span><span>Tap ☰: panel</span></div>
     </div>
   `;
@@ -1831,235 +1700,174 @@ function sanitizeForPDF(text){
   return normalizeText(text).replace(/[^\x00-\xFF]/g, "");
 }
 async function generateResearchPDF() {
-  if (!ENGINE_STATE.research_nodes || ENGINE_STATE.research_nodes.length === 0) {
-    return showToast("NO RESEARCH TO EXPORT");
-  }
+  if (!ENGINE_STATE.research_nodes || ENGINE_STATE.research_nodes.length === 0) return showToast("NO RESEARCH TO EXPORT");
   showToast("GENERATING PDF...");
   try {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 40;
-    const contentWidth = pageWidth - margin * 2;
-    const firstNode = ENGINE_STATE.research_nodes[0];  
-    const decisionMeta = firstNode?.decisionMeta || {};  
-    const synthesis = ENGINE_STATE.synthesis || null;  
-    let pageNum = 1;  
-    function footer() {  
-      doc.setFontSize(9);  
-      doc.setTextColor(140);  
-      doc.text(`decide.engine • Page ${pageNum}`, pageWidth / 2, pageHeight - 24, { align: "center" });  
-      doc.setFontSize(8);  
-      doc.text(  
-        `Generated: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`,  
-        margin,  
-        pageHeight - 24  
-      );  
-    }  
-    function ensureSpace(y, needed = 40){  
-      if (y + needed <= pageHeight - 60) return y;  
-      doc.addPage();  
-      pageNum++;  
-      return 60;  
-    }  
-    doc.setFont("helvetica", "bold");  
-    doc.setFontSize(28);  
-    doc.setTextColor(255, 103, 31);  
-    doc.text("Decision Research Brief", pageWidth / 2, 90, { align: "center" });  
-    doc.setFont("helvetica", "normal");  
-    doc.setFontSize(12);  
-    doc.setTextColor(80);  
-    doc.text(`${ENGINE_STATE.research_nodes.length} nodes`, pageWidth / 2, 114, { align: "center" });  
-    let y = 160;  
-    doc.setFont("helvetica", "bold");  
-    doc.setFontSize(14);  
-    doc.setTextColor(20);  
-    doc.text("Decision Context", margin, y);  
-    y += 18;  
-    doc.setFont("helvetica", "normal");  
-    doc.setFontSize(11);  
-    const ctxLines = [  
-      `Decision: ${decisionMeta.decision || "N/A"}`,  
-      `Time horizon: ${decisionMeta.time || "N/A"}`,  
-      `Stake: ${decisionMeta.stake || "N/A"}`,  
-      `Success metric: ${decisionMeta.success || "N/A"}`,  
-      `Options: ${decisionMeta.options || "N/A"}`  
-    ];  
-    ctxLines.forEach(line => {  
-      const lines = doc.splitTextToSize(sanitizeForPDF(line), contentWidth);  
-      lines.forEach(L => {  
-        y = ensureSpace(y, 18);  
-        doc.text(L, margin, y);  
-        y += 14;  
-      });  
-    });  
-    y += 18;  
-    doc.setFont("helvetica", "bold");  
-    doc.setFontSize(14);  
-    doc.text("Index", margin, y);  
-    y += 16;  
-    doc.setFont("helvetica", "normal");  
-    doc.setFontSize(11);  
-    ENGINE_STATE.research_nodes.forEach((n, i) => {  
-      const line = `${i + 1}. ${sanitizeForPDF(n.title || "Untitled")}`;  
-      const lines = doc.splitTextToSize(line, contentWidth);  
-      lines.forEach(L => {  
-        y = ensureSpace(y, 18);  
-        doc.text(L, margin, y);  
-        y += 14;  
-      });  
-    });  
-    footer();  
-    ENGINE_STATE.research_nodes.forEach((node, index) => {  
-      doc.addPage();  
-      pageNum++;  
-      let y2 = 70;  
-      const title = sanitizeForPDF(node.title || "Untitled");  
-      const src = sanitizeForPDF(node.sourceName || "Local");  
-      const conf = sanitizeForPDF(node.confidence || "High");  
-      const url = sanitizeForPDF(node.url || "");  
-      doc.setFont("helvetica", "bold");  
-      doc.setFontSize(18);  
-      doc.setTextColor(255, 103, 31);  
-      const tLines = doc.splitTextToSize(`${index + 1}. ${title}`, contentWidth);  
-      doc.text(tLines, margin, y2);  
-      y2 += tLines.length * 18;  
-      doc.setFont("helvetica", "normal");  
-      doc.setFontSize(10);  
-      doc.setTextColor(110);  
-      doc.text(`Source: ${src} • Confidence: ${conf}`, margin, y2);  
-      y2 += 16;  
-      if (url) {  
-        const uLines = doc.splitTextToSize(`URL: ${url}`, contentWidth);  
-        uLines.forEach(L => {  
-          y2 = ensureSpace(y2, 18);  
-          doc.text(L, margin, y2);  
-          y2 += 12;  
-        });  
-        y2 += 6;  
-      }  
-      const takeaways = extractTakeaways(node.summary || "", 4).map(sanitizeForPDF);  
-      doc.setFont("helvetica", "bold");  
-      doc.setFontSize(12);  
-      doc.setTextColor(20);  
-      doc.text("Key takeaways", margin, y2);  
-      y2 += 14;  
-      doc.setFont("helvetica", "normal");  
-      doc.setFontSize(11);  
-      doc.setTextColor(40);  
-      if (takeaways.length) {  
-        takeaways.forEach(tw => {  
-          const lines = doc.splitTextToSize(`• ${tw}`, contentWidth);  
-          lines.forEach(L => {  
-            y2 = ensureSpace(y2, 18);  
-            doc.text(L, margin, y2);  
-            y2 += 14;  
-          });  
-          y2 += 2;  
-        });  
-      } else {  
-        y2 = ensureSpace(y2, 18);  
-        doc.text("• (No takeaways extracted)", margin, y2);  
-        y2 += 14;  
-      }  
-      y2 += 8;  
-      doc.setFont("helvetica", "bold");  
-      doc.setFontSize(12);  
-      doc.setTextColor(20);  
-      doc.text("Summary", margin, y2);  
-      y2 += 14;  
-      doc.setFont("helvetica", "normal");  
-      doc.setFontSize(11);  
-      doc.setTextColor(40);  
-      const summary = sanitizeForPDF(node.summary || "");  
-      const sLines = doc.splitTextToSize(summary || "No summary available.", contentWidth);  
-      sLines.forEach(L => {  
-        y2 = ensureSpace(y2, 18);  
-        doc.text(L, margin, y2);  
-        y2 += 14;  
-      });  
-      footer();  
-    });  
-    if (synthesis && (synthesis.thesis || (synthesis.topTakeaways && synthesis.topTakeaways.length) || synthesis.implications || synthesis.next || synthesis.recommendation || synthesis.contradictions)) {  
-      doc.addPage();  
-      pageNum++;  
-      let y3 = 70;  
-      doc.setFont("helvetica", "bold");  
-      doc.setFontSize(18);  
-      doc.setTextColor(255, 103, 31);  
-      doc.text("Synthesis", margin, y3);  
-      y3 += 22;  
-      doc.setFont("helvetica", "bold");  
-      doc.setFontSize(12);  
-      doc.setTextColor(20);  
-      function block(title, text){  
-        if (!text || !String(text).trim()) return;  
-        y3 = ensureSpace(y3, 40);  
-        doc.text(title, margin, y3);  
-        y3 += 14;  
-        doc.setFont("helvetica", "normal");  
-        doc.setFontSize(11);  
-        doc.setTextColor(40);  
-        const lines = doc.splitTextToSize(sanitizeForPDF(String(text)), contentWidth);  
-        lines.forEach(L => {  
-          y3 = ensureSpace(y3, 18);  
-          doc.text(L, margin, y3);  
-          y3 += 14;  
-        });  
-        y3 += 10;  
-        doc.setFont("helvetica", "bold");  
-        doc.setFontSize(12);  
-        doc.setTextColor(20);  
-      }  
-      block("Working thesis", synthesis.thesis);  
-      if (Array.isArray(synthesis.topTakeaways) && synthesis.topTakeaways.length) {  
-        y3 = ensureSpace(y3, 40);  
-        doc.text("Top takeaways", margin, y3);  
-        y3 += 14;  
-        doc.setFont("helvetica", "normal");  
-        doc.setFontSize(11);  
-        doc.setTextColor(40);  
-        synthesis.topTakeaways.forEach(tw => {  
-          const lines = doc.splitTextToSize(`• ${sanitizeForPDF(tw)}`, contentWidth);  
-          lines.forEach(L => {  
-            y3 = ensureSpace(y3, 18);  
-            doc.text(L, margin, y3);  
-            y3 += 14;  
-          });  
-          y3 += 2;  
-        });  
-        y3 += 10;  
-        doc.setFont("helvetica", "bold");  
-        doc.setFontSize(12);  
-        doc.setTextColor(20);  
-      }  
-      block("Contradictions / open questions", synthesis.contradictions);  
-      block("Decision implications", synthesis.implications);  
-      block("Next research nodes", synthesis.next);  
-      block("Recommendation signals", synthesis.recommendation);  
-      footer();  
-    }  
-    doc.save(`decision-research-${new Date().toISOString().slice(0,10)}.pdf`);  
-    showToast("PDF DOWNLOADED");  
-  } catch (e) {
-    console.error("PDF generation error:", e);
-    showToast("PDF FAILED");
+    const margin = 18;
+    const contentWidth = pageWidth - (2 * margin);
+    const addFooter = (pageNum, totalPages) => {
+      doc.setFontSize(7);
+      doc.setTextColor(150,150,150);
+      doc.text(`viadecide.com | Page ${pageNum} of ${totalPages}`, pageWidth/2, pageHeight - 8, { align: 'center' });
+      const timestamp = new Date().toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short', timeZone:'Asia/Kolkata' });
+      doc.setFontSize(6);
+      doc.text(`Generated: ${timestamp}`, margin, pageHeight - 8);
+    };
+
+    let pageNum = 1;
+    const totalPages = ENGINE_STATE.research_nodes.length + 1;
+
+    doc.setFontSize(26);
+    doc.setTextColor(255, 103, 31);
+    doc.text("RESEARCH JOURNEY", pageWidth / 2, 52, { align: 'center' });
+    doc.setFontSize(11);
+    doc.setTextColor(0, 200, 100);
+    doc.text("Powered by decide.engine", pageWidth / 2, 64, { align: 'center' });
+
+    doc.setDrawColor(220,220,220);
+    doc.setLineWidth(0.5);
+    doc.rect(margin, 86, contentWidth, 34);
+
+    doc.setFontSize(10);
+    doc.setTextColor(60,60,60);
+    doc.text(`Total Nodes: ${ENGINE_STATE.research_nodes.length}`, pageWidth / 2, 98, { align: 'center' });
+    doc.text(`Primary Source: ${ENGINE_STATE.research_nodes[0]?.sourceName || 'Local'}`, pageWidth / 2, 106, { align: 'center' });
+    doc.text(`Export Date: ${new Date().toLocaleDateString('en-IN', { timeZone:'Asia/Kolkata' })}`, pageWidth / 2, 114, { align: 'center' });
+
+    addFooter(pageNum, totalPages);
+
+    ENGINE_STATE.research_nodes.forEach((node, index) => {
+      doc.addPage();
+      pageNum++;
+      const title = sanitizeForPDF(node.title);
+      const summaryRaw = sanitizeForPDF(node.summary);
+      const takeaways = extractTakeaways(summaryRaw, 4).map(sanitizeForPDF);
+
+      let y = 22;
+
+      doc.setFillColor(0, 200, 100);
+      doc.circle(margin + 7, y + 3, 7, 'F');
+      doc.setFontSize(10);
+      doc.setTextColor(255,255,255);
+      doc.setFont(undefined, 'bold');
+      doc.text(String(index + 1), margin + 7, y + 5, { align: 'center' });
+      doc.setFont(undefined, 'normal');
+
+      doc.setFontSize(16);
+      doc.setTextColor(255, 103, 31);
+      doc.setFont(undefined, 'bold');
+      const titleLines = doc.splitTextToSize(title, contentWidth - 18);
+      doc.text(titleLines, margin + 18, y);
+      y += titleLines.length * 7 + 6;
+
+      doc.setFont(undefined, 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(120,120,120);
+      doc.text(`Source: ${node.sourceName || "Local"}`, margin, y);
+      y += 5;
+
+      if (node.categories && node.categories.length > 0) {
+        const cats = sanitizeForPDF(node.categories.slice(0,4).join(' • '));
+        const catLines = doc.splitTextToSize(cats, contentWidth);
+        doc.text(catLines, margin, y);
+        y += catLines.length * 4.5 + 4;
+      }
+
+      doc.setDrawColor(220,220,220);
+      doc.setLineWidth(0.5);
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 8;
+
+      doc.setFontSize(10);
+      doc.setTextColor(40,40,40);
+      doc.setFont(undefined, 'bold');
+      doc.text("Key takeaways", margin, y);
+      y += 6;
+
+      doc.setFont(undefined, 'normal');
+      doc.setFontSize(9.8);
+      takeaways.forEach(t => {
+        const lines = doc.splitTextToSize(`• ${t}`, contentWidth);
+        lines.forEach(line => {
+          if (y < pageHeight - 34) {
+            doc.text(line, margin, y);
+            y += 5.6;
+          }
+        });
+        y += 1.5;
+      });
+
+      y += 3;
+      doc.setDrawColor(235,235,235);
+      doc.setLineWidth(0.3);
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 8;
+
+      doc.setFontSize(10);
+      doc.setTextColor(40,40,40);
+      doc.setFont(undefined, 'bold');
+      doc.text("Summary", margin, y);
+      y += 6;
+
+      doc.setFont(undefined, 'normal');
+      let summaryText = summaryRaw;
+      const maxChars = 2400;
+      if (summaryText.length > maxChars) {
+        summaryText = summaryText.slice(0, maxChars);
+        const lastPeriod = summaryText.lastIndexOf('.');
+        if (lastPeriod > maxChars - 250) summaryText = summaryText.slice(0, lastPeriod + 1);
+      }
+
+      const paras = [];
+      const sents = splitIntoSentences(summaryText);
+      if (sents.length) {
+        paras.push(sents.slice(0,1).join(" "));
+        for (let i=1;i<sents.length;i+=3) paras.push(sents.slice(i,i+3).join(" "));
+      } else paras.push(summaryText);
+
+      const lineH = 5.6;
+      paras.forEach(p => {
+        const lines = doc.splitTextToSize(p, contentWidth);
+        lines.forEach(line => {
+          if (y < pageHeight - 34) {
+            doc.text(line, margin, y);
+            y += lineH;
+          }
+        });
+        y += 3;
+      });
+
+      addFooter(pageNum, totalPages);
+    });
+
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10);
+    doc.save(`research-journey-${dateStr}.pdf`);
+    showToast("PDF DOWNLOADED!");
+  } catch (error) {
+    console.error('PDF generation error:', error);
+    showToast("PDF GENERATION FAILED");
   }
 }
 
 /* =========================================
-DECISION PRO UI PDF (kept, not changed)
+DECISION PRO UI PDF
 ========================================= */
 function buildDecisionProModel() {
   const nodes = ENGINE_STATE.research_nodes || [];
   const first = nodes[0];
   const synthesis = ENGINE_STATE.synthesis || {};
+
   const aggregated = [];
   nodes.forEach(n => {
     const tw = extractTakeaways(n.summary || "", 4);
     tw.forEach(line => aggregated.push(line));
   });
+
   const syn = { ...synthesis };
   const context = {
     decision: first?.decisionMeta?.decision || "",
@@ -2068,6 +1876,7 @@ function buildDecisionProModel() {
     success: first?.decisionMeta?.success || "",
     options: first?.decisionMeta?.options || ""
   };
+
   if (!syn.topTakeaways || syn.topTakeaways.length === 0) syn.topTakeaways = aggregated.slice(0, 5);
   if (!syn.thesis || syn.thesis.trim() === '') {
     syn.thesis = `Decision: ${context.decision || 'N/A'}, Time horizon: ${context.time || 'N/A'}, Stake: ${context.stake || 'N/A'}, Success metric: ${context.success || 'N/A'}, Options: ${context.options || 'N/A'}`;
@@ -2078,6 +1887,7 @@ function buildDecisionProModel() {
   if (!syn.contradictions || syn.contradictions.trim() === '') syn.contradictions = 'None specified';
   if (!syn.next || syn.next.trim() === '') syn.next = 'N/A';
   if (!syn.recommendation || syn.recommendation.trim() === '') syn.recommendation = 'No recommendations provided';
+
   return {
     meta: {
       title: (first?.title ? first.title.toUpperCase() : "DECISION BRIEF"),
@@ -2105,6 +1915,7 @@ function renderDecisionProDocHTML(model) {
   const esc = escapeHTML;
   const wm = esc(model.meta?.watermark || "");
   const ctx = model.context || {};
+
   const cover = `
     <div class="proui-page">
       <div class="proui-pillrow">
@@ -2114,36 +1925,39 @@ function renderDecisionProDocHTML(model) {
       </div>
       <h1 class="proui-title">${esc(model.meta.title || "")}</h1>
       <p class="proui-subtitle">${esc(model.meta.subtitle || "")}</p>
-      <div class="proui-grid2" style="margin-top:14px;">  
-          <div class="proui-card">  
-            <div class="proui-h">Decision Context</div>  
-            <div class="proui-kv">  
-              <div class="proui-k">Decision</div><div class="proui-v">${esc(ctx.decision || "N/A")}</div>  
-              <div class="proui-k">Time horizon</div><div class="proui-v">${esc(ctx.time || "N/A")}</div>  
-              <div class="proui-k">Stake</div><div class="proui-v">${esc(ctx.stake || "N/A")}</div>  
-              <div class="proui-k">Success metric</div><div class="proui-v">${esc(ctx.success || "N/A")}</div>  
-              <div class="proui-k">Options</div><div class="proui-v">${esc(ctx.options || "N/A")}</div>  
-            </div>  
-          </div>  
-          <div class="proui-card">  
-            <div class="proui-h">Snapshot</div>  
-            <div class="proui-kv">  
-              <div class="proui-k">Nodes</div><div class="proui-v">${model.nodes.length}</div>  
-              <div class="proui-k">Primary source</div><div class="proui-v">${esc(model.nodes[0]?.sourceName || "")}</div>  
-              <div class="proui-k">Confidence</div><div class="proui-v">${esc(model.nodes[0]?.confidence || "")}</div>  
-            </div>  
-          </div>  
-        </div>  
-        <div style="height:16px"></div>  
-        <div class="proui-card">  
-          <div class="proui-h">Index</div>  
-          <ul class="proui-list">  
-            ${model.nodes.map(n => `<li>#${n.idx} — ${esc(n.title)}</li>`).join("")}  
-          </ul>  
-        </div>  
-        <div class="proui-wm">${wm}</div>  
+
+      <div class="proui-grid2" style="margin-top:14px;">
+        <div class="proui-card">
+          <div class="proui-h">Decision Context</div>
+          <div class="proui-kv">
+            <div class="proui-k">Decision</div><div class="proui-v">${esc(ctx.decision || "N/A")}</div>
+            <div class="proui-k">Time horizon</div><div class="proui-v">${esc(ctx.time || "N/A")}</div>
+            <div class="proui-k">Stake</div><div class="proui-v">${esc(ctx.stake || "N/A")}</div>
+            <div class="proui-k">Success metric</div><div class="proui-v">${esc(ctx.success || "N/A")}</div>
+            <div class="proui-k">Options</div><div class="proui-v">${esc(ctx.options || "N/A")}</div>
+          </div>
+        </div>
+        <div class="proui-card">
+          <div class="proui-h">Snapshot</div>
+          <div class="proui-kv">
+            <div class="proui-k">Nodes</div><div class="proui-v">${model.nodes.length}</div>
+            <div class="proui-k">Primary source</div><div class="proui-v">${esc(model.nodes[0]?.sourceName || "")}</div>
+            <div class="proui-k">Confidence</div><div class="proui-v">${esc(model.nodes[0]?.confidence || "")}</div>
+          </div>
+        </div>
       </div>
+
+      <div style="height:16px"></div>
+      <div class="proui-card">
+        <div class="proui-h">Index</div>
+        <ul class="proui-list">
+          ${model.nodes.map(n => `<li>#${n.idx} — ${esc(n.title)}</li>`).join("")}
+        </ul>
+      </div>
+      <div class="proui-wm">${wm}</div>
+    </div>
   `;
+
   const nodePages = model.nodes.map(n => {
     const takeaways = (n.takeaways || []).length
       ? (n.takeaways || []).map(t => `<li>${esc(t)}</li>`).join("")
@@ -2151,90 +1965,105 @@ function renderDecisionProDocHTML(model) {
     const cats = (n.categories || []).length
       ? `<div style="margin-top:10px" class="proui-small"><strong>Categories:</strong> ${esc(n.categories.join(" • "))}</div>`
       : "";
-    let summary = sanitizeForPDF(n.summary || "");  
-    if (summary.length > 2400) summary = summary.slice(0, 2400);  
+
+    let summary = sanitizeForPDF(n.summary || "");
+    if (summary.length > 2400) summary = summary.slice(0, 2400);
     const sents = splitIntoSentences(summary);
     const lead = sents[0] || summary;
     const rest = sents.slice(1);
     const restParas = [];
-    for (let i = 0; i < rest.length; i += 3) restParas.push(rest.slice(i, i+3).join(" "));  
-    return `  
-      <div class="proui-page">  
-        <div class="proui-card" style="margin-bottom:16px;">  
-          <div class="proui-h">Node ${n.idx}</div>  
-          <div class="proui-nodeTitle">${esc(n.title)}</div>  
-          <div class="proui-small" style="margin-top:6px;">  
-            <strong>Source:</strong> ${esc(n.sourceName)} (${esc(n.confidence)})  
-          </div>  
-          ${cats}  
-        </div>  
-        <div class="proui-grid2">  
-          <div class="proui-card">  
-            <div class="proui-h">Key takeaways</div>  
-            <ul class="proui-list">${takeaways}</ul>  
-          </div>  
-          <div class="proui-card">  
-            <div class="proui-h">Decision Implications</div>  
-            <div class="proui-small">  
-              <p style="margin:0 0 8px 0; font-weight:800; color:#e2e8f0;">${esc(n.decisionMeta?.decision || "No decision context provided")}</p>  
-              <p style="margin:0 0 8px 0;">Stake: ${esc(n.decisionMeta?.stake || "-")} | Time: ${esc(n.decisionMeta?.time || "-")} | Metric: ${esc(n.decisionMeta?.success || "-")} | Options: ${esc(n.decisionMeta?.options || "-")}</p>  
-            </div>  
-          </div>  
-        </div>  
-        <div style="height:16px"></div>  
-        <div class="proui-card">  
-          <div class="proui-h">Summary</div>  
-          <div class="proui-small">  
-            <p style="margin:0 0 8px 0; font-weight:800; color:#e2e8f0;">${esc(lead)}</p>  
-            ${restParas.map(p => `<p style="margin:0 0 8px 0;">${esc(p)}</p>`).join("")}  
-          </div>  
-        </div>  
-        <div style="height:16px"></div>  
-        <div class="proui-card">  
-          <div class="proui-h">Full article</div>  
-          <div class="proui-small">${n.url ? esc(n.url) : "No URL available"}</div>  
-        </div>  
-        <div class="proui-wm">${wm}</div>  
-      </div>  
+    for (let i = 0; i < rest.length; i += 3) restParas.push(rest.slice(i, i+3).join(" "));
+
+    return `
+      <div class="proui-page">
+        <div class="proui-card" style="margin-bottom:16px;">
+          <div class="proui-h">Node ${n.idx}</div>
+          <div class="proui-nodeTitle">${esc(n.title)}</div>
+          <div class="proui-small" style="margin-top:6px;">
+            <strong>Source:</strong> ${esc(n.sourceName)} (${esc(n.confidence)})
+          </div>
+          ${cats}
+        </div>
+
+        <div class="proui-grid2">
+          <div class="proui-card">
+            <div class="proui-h">Key takeaways</div>
+            <ul class="proui-list">${takeaways}</ul>
+          </div>
+          <div class="proui-card">
+            <div class="proui-h">Decision Implications</div>
+            <div class="proui-small">
+              <p style="margin:0 0 8px 0; font-weight:800; color:#e2e8f0;">${esc(n.decisionMeta?.decision || "No decision context provided")}</p>
+              <p style="margin:0 0 8px 0;">Stake: ${esc(n.decisionMeta?.stake || "-")} | Time: ${esc(n.decisionMeta?.time || "-")} | Metric: ${esc(n.decisionMeta?.success || "-")} | Options: ${esc(n.decisionMeta?.options || "-")}</p>
+            </div>
+          </div>
+        </div>
+
+        <div style="height:16px"></div>
+        <div class="proui-card">
+          <div class="proui-h">Summary</div>
+          <div class="proui-small">
+            <p style="margin:0 0 8px 0; font-weight:800; color:#e2e8f0;">${esc(lead)}</p>
+            ${restParas.map(p => `<p style="margin:0 0 8px 0;">${esc(p)}</p>`).join("")}
+          </div>
+        </div>
+
+        <div style="height:16px"></div>
+        <div class="proui-card">
+          <div class="proui-h">Full article</div>
+          <div class="proui-small">${n.url ? esc(n.url) : "No URL available"}</div>
+        </div>
+
+        <div class="proui-wm">${wm}</div>
+      </div>
     `;
   }).join("");
+
   const syn = model.synthesis || {};
   const finalPage = `
     <div class="proui-page">
-    <h2 class="proui-title" style="margin-bottom:10px;">Synthesis & Next Steps</h2>
-    <div class="proui-card" style="margin-bottom:12px;">  
-        <div class="proui-h">Working thesis</div>  
-        <div class="proui-small">${esc(syn.thesis || "No thesis provided")}</div>  
-      </div>  
-      <div class="proui-grid2">  
-        <div class="proui-card">  
-          <div class="proui-h">Top takeaways</div>  
-          <ul class="proui-list">${(syn.topTakeaways || []).map(t => `<li>${esc(t)}</li>`).join("")}</ul>  
-        </div>  
-        <div class="proui-card">  
-          <div class="proui-h">Contradictions / Questions</div>  
-          <div class="proui-small">${esc(syn.contradictions || "None specified")}</div>  
-        </div>  
-      </div>  
-      <div style="height:12px"></div>  
-      <div class="proui-grid2">  
-        <div class="proui-card">  
-          <div class="proui-h">Decision implications</div>  
-          <div class="proui-small">${esc(syn.implications || "No implications provided")}</div>  
-        </div>  
-        <div class="proui-card">  
-          <div class="proui-h">Next research nodes</div>  
-          <div class="proui-small">${esc(syn.next || "N/A")}</div>  
-        </div>  
-      </div>  
-      <div style="height:12px"></div>  
-      <div class="proui-card">  
-        <div class="proui-h">Recommendation signals</div>  
-        <div class="proui-small">${esc(syn.recommendation || "")}</div>  
-      </div>  
-      <div class="proui-wm">${wm}</div>  
+      <h2 class="proui-title" style="margin-bottom:10px;">Synthesis & Next Steps</h2>
+
+      <div class="proui-card" style="margin-bottom:12px;">
+        <div class="proui-h">Working thesis</div>
+        <div class="proui-small">${esc(syn.thesis || "No thesis provided")}</div>
+      </div>
+
+      <div class="proui-grid2">
+        <div class="proui-card">
+          <div class="proui-h">Top takeaways</div>
+          <ul class="proui-list">${(syn.topTakeaways || []).map(t => `<li>${esc(t)}</li>`).join("")}</ul>
+        </div>
+        <div class="proui-card">
+          <div class="proui-h">Contradictions / Questions</div>
+          <div class="proui-small">${esc(syn.contradictions || "None specified")}</div>
+        </div>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div class="proui-grid2">
+        <div class="proui-card">
+          <div class="proui-h">Decision implications</div>
+          <div class="proui-small">${esc(syn.implications || "No implications provided")}</div>
+        </div>
+        <div class="proui-card">
+          <div class="proui-h">Next research nodes</div>
+          <div class="proui-small">${esc(syn.next || "N/A")}</div>
+        </div>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div class="proui-card">
+        <div class="proui-h">Recommendation signals</div>
+        <div class="proui-small">${esc(syn.recommendation || "")}</div>
+      </div>
+
+      <div class="proui-wm">${wm}</div>
     </div>
   `;
+
   return `<div class="proui-doc">${cover}${nodePages}${finalPage}</div>`;
 }
 async function generateDecisionProUIPDF() {
@@ -2278,6 +2107,7 @@ Swipe navigation
 let startY = null;
 let startX = null;
 let isSwiping = false;
+
 function onTouchStart(e){
   if (!e.touches || e.touches.length !== 1) return;
   const target = e.target;
@@ -2357,48 +2187,6 @@ function boot(){
   }
 }
 boot();
-
-/* =========================================
-PATCH: Service Worker Registration
-========================================= */
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js")
-      .then(reg => console.log("SW registered:", reg.scope))
-      .catch(err => console.log("SW failed:", err));
-  });
-}
-
-/* =========================================
-Cross-Origin Message Listener
-========================================= */
-// Listen for messages from Alchemist quiz (cross-origin)
-window.addEventListener("message", (ev) => {
-  if (ev.origin !== QUIZ_ORIGIN) return;
-  const msg = ev.data || {};
-  if (!msg.type) return;
-  if (msg.type === "ALCHEMIST_READY") {
-    QUIZ_HANDSHAKE_OK = true;
-    if (QUIZ_WIN && !QUIZ_WIN.closed && QUIZ_LAST_PAYLOAD) {
-      QUIZ_WIN.postMessage(QUIZ_LAST_PAYLOAD, QUIZ_ORIGIN);
-      showToast("SESSION INJECTED");
-    }
-    return;
-  }
-  if (msg.type === "ALCHEMIST_RESULTS") {
-    ENGINE_STATE.quizStats = msg.results || null;
-    if (ENGINE_STATE.quizStats) {
-      showToast(`QUIZ: ${ENGINE_STATE.quizStats.accuracy}% • +${ENGINE_STATE.quizStats.xp} XP`);
-      scoreSynthesis();
-      autosaveProjectIfPossible();
-      updateUIPanel();
-    } else {
-      showToast("QUIZ RESULTS EMPTY");
-    }
-    return;
-  }
-});
-
-</script>
+  </script>
 </body>
-</html>
+  </html>

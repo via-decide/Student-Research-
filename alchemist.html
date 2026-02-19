@@ -1,9 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <link rel="manifest" href="manifest.json">
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Alchemist | Kinetic</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
@@ -11,19 +13,36 @@
 
   <style>
     :root{
-      --bg:#000000; --card:#0a0a0a; --border:#222; --gold:#ffd600; --green:#2ecc71; --red:#ff4444;
+      --bg:#000000; --card:#0a0a0a; --border:#222;
+      --gold:#ffd600; --green:#2ecc71; --red:#ff4444;
       --text-white:#ffffff; --text-grey:#888888;
-      --font-serif:'Crimson Text',serif; --font-sans:'Inter',sans-serif; --font-code:'JetBrains Mono',monospace;
+      --font-serif:'Crimson Text',serif;
+      --font-sans:'Inter',sans-serif;
+      --font-code:'JetBrains Mono',monospace;
     }
     *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-    body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font-family:var(--font-sans); overflow:hidden; display:flex; flex-direction:column;}
+    body{
+      margin:0; height:100vh; background:var(--bg); color:var(--text-white);
+      font-family:var(--font-sans); overflow:hidden;
+      display:flex; flex-direction:column;
+    }
 
     #header{width:90%; margin:25px auto 0; z-index:100; flex-shrink:0;}
-    .header-meta{display:flex; justify-content:space-between; font-family:var(--font-code); font-size:0.75rem; color:#666; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:15px;}
+    .header-meta{
+      display:flex; justify-content:space-between;
+      font-family:var(--font-code); font-size:0.75rem; color:#666;
+      letter-spacing:1.5px; text-transform:uppercase; margin-bottom:15px;
+      white-space:nowrap;
+    }
     .progress-track{width:100%; height:3px; background:#222; border-radius:2px;}
     #progress-bar{height:100%; background:var(--gold); width:0%; transition:width 0.4s ease; border-radius:2px;}
 
-    #kinetic-logger{width:90%; margin:15px auto 5px; font-family:var(--font-code); font-size:0.8rem; color:#444; line-height:1.4; text-transform:uppercase; min-height:60px; display:flex; flex-direction:column; justify-content:flex-end;}
+    #kinetic-logger{
+      width:90%; margin:15px auto 5px; font-family:var(--font-code);
+      font-size:0.8rem; color:#444; line-height:1.4; text-transform:uppercase;
+      min-height:60px; display:flex; flex-direction:column; justify-content:flex-end;
+      flex-shrink:0;
+    }
     .log-line{opacity:0.5; transition:opacity 0.2s;}
     .log-line.active{color:var(--green); opacity:1; font-weight:700;}
     .log-line.primary{color:var(--gold); opacity:1; font-weight:700;}
@@ -34,99 +53,186 @@
       font-family:var(--font-code); font-size:0.6rem; color:#444;
       border:1px solid #333; padding:4px 8px; border-radius:4px;
       opacity:0; transition:opacity 0.5s; pointer-events:none;
+      z-index:200;
     }
     #gyro-status.active{opacity:1; color:var(--gold); border-color:var(--gold);}
 
     #stack{
       position:relative; width:90%; max-width:420px;
       height:calc(100vh - 220px - env(safe-area-inset-bottom));
-      margin:10px auto 20px; perspective:1500px; display:flex; align-items:center; justify-content:center;
+      margin:10px auto 20px;
+      perspective:1500px;
+      display:flex; align-items:center; justify-content:center;
+      flex:1; min-height:0;
     }
+
+    /* =========================
+       CARD LAYOUT (FIX OVERFLOW)
+       ========================= */
     .card{
-      position:absolute; width:100%; height:100%; background:var(--card);
-      border-radius:14px; border:1px solid var(--border); padding:35px;
-      display:flex; flex-direction:column; justify-content:center; align-items:center;
+      position:absolute;
+      width:100%; height:100%;
+      background:var(--card);
+      border-radius:14px; border:1px solid var(--border);
+      padding:18px 18px 16px;
       box-shadow:0 20px 60px rgba(0,0,0,0.95);
       will-change: transform;
-      transform-style:preserve-3d; overflow:hidden;
+      transform-style:preserve-3d;
+      overflow:hidden; /* IMPORTANT: nothing can escape deck */
       transition: transform 0.18s ease, opacity 0.18s ease;
+
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      min-height:0; /* IMPORTANT for scroll children */
     }
     .card.locked{opacity:0.18; transform:scale(0.97); filter:grayscale(100%);}
 
+    /* scroll area for question text */
     .card-q{
-      font-family:var(--font-serif); font-size:clamp(1.35rem, 5vw, 1.9rem);
-      line-height:1.4; font-weight:600; text-align:center; color:var(--text-white);
-      width:100%; max-height:100%; overflow-y:auto; word-wrap:break-word; padding:0 5px;
-      display:flex; flex-direction:column; justify-content:center;
+      flex:1;
+      min-height:0;          /* IMPORTANT */
+      overflow:auto;         /* IMPORTANT: scroll inside card */
+      -webkit-overflow-scrolling:touch;
+
+      width:100%;
+      padding:4px 4px;
+
+      font-family:var(--font-serif);
+      font-size:clamp(1.15rem, 4.8vw, 1.65rem);
+      line-height:1.42;
+      font-weight:600;
+      text-align:center;
+      color:var(--text-white);
+
+      /* IMPORTANT: prevent long strings from breaking layout */
+      overflow-wrap:anywhere;
+      word-break:break-word;
+      hyphens:auto;
+
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
     }
     .card-q::-webkit-scrollbar{width:0px;}
     .card-q sub{font-size:0.7em; vertical-align:-0.3em;}
     .card-q sup{font-size:0.7em; vertical-align:0.5em;}
 
-    .swipe-label{
-      position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-      background:rgba(0,0,0,0.86);
-      font-family:var(--font-sans); font-weight:900;
-      font-size:1.6rem; text-transform:uppercase; letter-spacing:1px;
-      text-align:center; padding:40px; opacity:0; pointer-events:none;
-      transition:opacity 0.1s ease, transform 0.1s ease;
-      border-radius:14px; color:var(--text-white); border:1px solid #444;
-      transform:scale(0.92);
-    }
-    .swipe-label.show{opacity:1; transform:scale(1);}
-    .chiprow{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:14px;}
+    .chiprow{display:flex; flex-wrap:wrap; gap:8px; justify-content:center;}
     .chip{
       font-family:var(--font-code); font-size:0.65rem; color:#bbb;
-      border:1px solid #2a2a2a; background:#080808; padding:6px 10px; border-radius:999px;
+      border:1px solid #2a2a2a; background:#080808;
+      padding:6px 10px; border-radius:999px;
       text-transform:uppercase; letter-spacing:0.08em;
+      max-width:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
     }
-    .btnrow{display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; margin-top:16px;}
+
+    .small{
+      font-family:var(--font-code); font-size:0.72rem; color:#666;
+      letter-spacing:0.08em; text-transform:uppercase; text-align:center; line-height:1.5;
+    }
+    .muted{color:#777;}
+
+    .btnrow{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      width:100%;
+      margin-top:auto;  /* pins buttons to bottom */
+      flex-shrink:0;
+    }
     .btn{
-      width:100%; border-radius:12px; border:1px solid #2a2a2a; background:#0b0b0b; color:#fff;
-      padding:12px 12px; font-weight:800; font-family:var(--font-code); letter-spacing:0.08em;
-      cursor:pointer; text-transform:uppercase;
+      width:100%;
+      border-radius:12px;
+      border:1px solid #2a2a2a;
+      background:#0b0b0b;
+      color:#fff;
+      padding:12px 10px;
+      font-weight:900;
+      font-family:var(--font-code);
+      letter-spacing:0.06em;
+      cursor:pointer;
+      text-transform:uppercase;
+      line-height:1.15;
+
+      /* better long option labels */
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
     }
     .btn:active{transform:scale(0.99); opacity:0.95;}
     .btn-gold{border-color:rgba(255,214,0,.55); color:var(--gold);}
     .btn-green{border-color:rgba(46,204,113,.55); color:var(--green);}
     .btn-red{border-color:rgba(255,68,68,.55); color:var(--red);}
 
-    .small{font-family:var(--font-code); font-size:0.72rem; color:#666; letter-spacing:0.08em; text-transform:uppercase; text-align:center; line-height:1.5;}
-    .muted{color:#777;}
+    /* Swipe overlay label now shows option text */
+    .swipe-label{
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(0,0,0,0.86);
+      font-family:var(--font-sans); font-weight:900;
+      font-size:1.15rem;
+      text-transform:uppercase; letter-spacing:1px;
+      text-align:center; padding:26px;
+      opacity:0; pointer-events:none;
+      transition:opacity 0.1s ease, transform 0.1s ease;
+      border-radius:14px; color:var(--text-white); border:1px solid #444;
+      transform:scale(0.92);
+
+      /* prevent overflow */
+      overflow-wrap:anywhere;
+      word-break:break-word;
+      hyphens:auto;
+      line-height:1.25;
+    }
+    .swipe-label.show{opacity:1; transform:scale(1);}
+    .swipe-label .dirHint{
+      display:block;
+      margin-top:10px;
+      font-family:var(--font-code);
+      font-size:0.7rem;
+      color:#777;
+      letter-spacing:0.08em;
+    }
   </style>
 </head>
+
 <body>
+  <div id="gyro-status">HYBRID SENSORS READY</div>
 
-<div id="gyro-status">HYBRID SENSORS READY</div>
-
-<div id="header">
-  <div class="header-meta">
-    <span id="id-ui">VIA.STACK</span>
-    <span id="xp-ui">0 XP</span>
+  <div id="header">
+    <div class="header-meta">
+      <span id="id-ui">VIA.STACK</span>
+      <span id="xp-ui">0 XP</span>
+    </div>
+    <div class="progress-track"><div id="progress-bar"></div></div>
   </div>
-  <div class="progress-track"><div id="progress-bar"></div></div>
-</div>
 
-<div id="kinetic-logger">
-  <div class="log-line" id="log-1">> SYSTEM BOOT</div>
-  <div class="log-line" id="log-2">> INJECTING DATA...</div>
-  <div class="log-line active" id="log-3">> ...</div>
-</div>
-
-<div id="stack">
-  <div class="card">
-    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666;">LOADING KINETIC CORE...</div>
+  <div id="kinetic-logger">
+    <div class="log-line" id="log-1">> SYSTEM BOOT</div>
+    <div class="log-line" id="log-2">> INJECTING DATA...</div>
+    <div class="log-line active" id="log-3">> ...</div>
   </div>
-</div>
+
+  <div id="stack">
+    <div class="card">
+      <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666;">LOADING KINETIC CORE...</div>
+    </div>
+  </div>
 
 <script>
 /* =========================================
-   ALCHEMIST | KINETIC (Decision OS injection)
-   Path A: alchemist.html in same folder as main index.html
-   ========================================= */
+   ALCHEMIST | KINETIC
+   FIXES:
+   1) text never escapes card (flex + scroll + wrap)
+   2) show option text (not UP/DOWN/LEFT/RIGHT) on swipe + buttons
+========================================= */
 
 /* ---------- injection loader ---------- */
-const ALCHEMIST_LS_KEY = "ALCHEMIST_INJECTED_DATA"; // must match Decision OS
+const ALCHEMIST_LS_KEY = "ALCHEMIST_INJECTED_DATA";
 let INJECTED_DATA = [];
 try {
   const raw = localStorage.getItem(ALCHEMIST_LS_KEY);
@@ -138,7 +244,7 @@ try {
   INJECTED_DATA = [];
 }
 
-/* If opened directly with no injected payload, show a tiny demo set */
+/* demo when no injection */
 if (!INJECTED_DATA.length) {
   INJECTED_DATA = [
     {
@@ -147,28 +253,56 @@ if (!INJECTED_DATA.length) {
       Domain: "Decision OS",
       Subdomain: "Onboarding",
       Difficulty: "1",
-      Question_Text: "Swipe UP for correct. This is a demo question.",
-      Correct_Answer: "UP is correct",
-      Distractor_1: "LEFT is correct",
-      Distractor_2: "DOWN is correct",
-      Correct_Direction: "UP",
-      Explanation_Short: "Demo explanation.",
-      Explanation_Long: "This demo appears only when no injected JSON exists."
+      Question_Text: "Which option matches this snippet?\n\n“Stoicism focuses on what you can control.”",
+      Correct_Answer: "Dichotomy of control",
+      Distractor_1: "Stoicism",
+      Distractor_2: "Cognitive behavioral therapy",
+      Correct_Direction: "RIGHT",
+      Explanation_Short: "The snippet points to the control split.",
+      Explanation_Long: "Demo appears only when no injected JSON exists."
     }
   ];
 }
 
-/* ---------- minimal mapping (your schema already fits) ---------- */
 function normDir(d){
   const x = String(d || "").trim().toUpperCase();
   if (x === "UP" || x === "DOWN" || x === "LEFT" || x === "RIGHT") return x;
   return "UP";
 }
+function escapeHTML(str){
+  return String(str ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+/* Build per-question option map:
+   - correctDir => Correct_Answer
+   - remaining dirs => distractors (then "SKIP")
+*/
+const ALL_DIRS = ["UP","RIGHT","LEFT","DOWN"];
+function buildOptionMap(q){
+  const correctDir = normDir(q.Correct_Direction);
+  const correctAns = (q.Correct_Answer || "").trim() || "—";
+  const d1 = (q.Distractor_1 || "").trim();
+  const d2 = (q.Distractor_2 || "").trim();
+  const distractors = [d1, d2].filter(Boolean);
+
+  const map = {};
+  map[correctDir] = correctAns;
+
+  const remaining = ALL_DIRS.filter(d => d !== correctDir);
+  // fill remaining with distractors first, then SKIP
+  for (let i = 0; i < remaining.length; i++){
+    map[remaining[i]] = distractors[i] || "SKIP";
+  }
+  return map;
+}
 
 const RAW_DATA = INJECTED_DATA.map((q, idx) => {
-  // Pick two wrong answers (distractors). If missing, fabricate.
-  const wrongs = [q.Distractor_1, q.Distractor_2].filter(Boolean);
-  while (wrongs.length < 2) wrongs.push("—");
+  const optionMap = buildOptionMap(q);
   return {
     id: q.Question_ID || String(idx + 1).padStart(3, "0"),
     set: q.Set_Code || "SET",
@@ -176,10 +310,9 @@ const RAW_DATA = INJECTED_DATA.map((q, idx) => {
     subdomain: q.Subdomain || "",
     difficulty: Number(q.Difficulty || 3),
     text: q.Question_Text || "Untitled question",
-    correct: q.Correct_Answer || "",
-    wrong1: wrongs[0],
-    wrong2: wrongs[1],
+    correct: (q.Correct_Answer || "").trim(),
     correctDir: normDir(q.Correct_Direction),
+    optionMap,
     expShort: q.Explanation_Short || "",
     expLong: q.Explanation_Long || ""
   };
@@ -200,9 +333,8 @@ const els = {
 let idx = 0;
 let xp = 0;
 let correctCount = 0;
-let answered = []; // {id, chosenDir, isCorrect, correctDir}
+let answered = []; // {id, chosenDir, chosenText, isCorrect, correctDir, correctText, ...}
 
-/* logger helpers */
 function setLog(primary, secondary, tertiary, mode="active"){
   if (els.log1) els.log1.textContent = primary || "> ...";
   if (els.log2) els.log2.textContent = secondary || "> ...";
@@ -227,7 +359,7 @@ function makeCard(q, zIndex){
 
   const label = document.createElement("div");
   label.className = "swipe-label";
-  label.textContent = "";
+  label.innerHTML = ""; // filled during swipe
 
   const qWrap = document.createElement("div");
   qWrap.className = "card-q";
@@ -238,29 +370,36 @@ function makeCard(q, zIndex){
   chipRow.innerHTML = `
     <span class="chip">${escapeHTML(q.domain)}</span>
     ${q.subdomain ? `<span class="chip">${escapeHTML(q.subdomain)}</span>` : ""}
-    <span class="chip">D:${String(q.difficulty)}</span>
+    <span class="chip">D:${escapeHTML(String(q.difficulty))}</span>
     <span class="chip">#${escapeHTML(q.id)}</span>
   `;
 
   const hint = document.createElement("div");
   hint.className = "small";
-  hint.style.marginTop = "14px";
   hint.innerHTML = `
-    <div class="muted">Swipe to answer</div>
-    <div>UP • DOWN • LEFT • RIGHT</div>
+    <div class="muted">Swipe or tap an option</div>
+    <div style="margin-top:6px; font-size:.68rem; color:#5e5e5e;">(UP / RIGHT / LEFT / DOWN are just directions)</div>
   `;
 
+  // buttons now show OPTION TEXT
   const btnRow = document.createElement("div");
   btnRow.className = "btnrow";
-  btnRow.innerHTML = `
-    <button class="btn btn-gold" data-dir="UP">UP</button>
-    <button class="btn btn-green" data-dir="RIGHT">RIGHT</button>
-    <button class="btn btn-red" data-dir="LEFT">LEFT</button>
-    <button class="btn" data-dir="DOWN">DOWN</button>
-  `;
 
-  btnRow.querySelectorAll("button").forEach(b => {
-    b.addEventListener("click", () => answer(b.getAttribute("data-dir")));
+  const btnDefs = [
+    { dir:"UP",    cls:"btn btn-gold" },
+    { dir:"RIGHT", cls:"btn btn-green" },
+    { dir:"LEFT",  cls:"btn btn-red" },
+    { dir:"DOWN",  cls:"btn" }
+  ];
+
+  btnDefs.forEach(def => {
+    const b = document.createElement("button");
+    b.className = def.cls;
+    b.setAttribute("data-dir", def.dir);
+    b.title = def.dir;
+    b.textContent = q.optionMap[def.dir] || "—";
+    b.addEventListener("click", () => answer(def.dir));
+    btnRow.appendChild(b);
   });
 
   card.appendChild(label);
@@ -269,22 +408,14 @@ function makeCard(q, zIndex){
   card.appendChild(hint);
   card.appendChild(btnRow);
 
-  // swipe
-  attachSwipe(card, label);
-
+  attachSwipe(card, label, q);
   return card;
 }
 
-function escapeHTML(str){
-  return String(str ?? "")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
-}
-
-function attachSwipe(card, label){
+/* Swipe handler:
+   overlay label shows option text for that direction
+*/
+function attachSwipe(card, label, q){
   let sx=0, sy=0, dragging=false;
 
   card.addEventListener("touchstart", (e) => {
@@ -302,9 +433,11 @@ function attachSwipe(card, label){
 
     // visual tilt
     card.style.transform = `translate(${dx*0.9}px, ${dy*0.9}px) rotateY(${dx/18}deg) rotateX(${-dy/22}deg)`;
+
     const dir = dominantDir(dx, dy);
     if (dir) {
-      label.textContent = dir;
+      const optText = (q.optionMap && q.optionMap[dir]) ? q.optionMap[dir] : dir;
+      label.innerHTML = `${escapeHTML(optText)}<span class="dirHint">${dir}</span>`;
       label.classList.add("show");
     } else {
       label.classList.remove("show");
@@ -346,7 +479,6 @@ function render(){
     return;
   }
 
-  // render 2 cards (current + next) for depth illusion
   const curr = RAW_DATA[idx];
   const next = RAW_DATA[idx + 1];
 
@@ -366,17 +498,20 @@ function answer(chosenDir){
 
   const q = RAW_DATA[idx];
   const correct = chosenDir === q.correctDir;
+  const chosenText = (q.optionMap && q.optionMap[chosenDir]) ? q.optionMap[chosenDir] : chosenDir;
+  const correctText = (q.optionMap && q.optionMap[q.correctDir]) ? q.optionMap[q.correctDir] : q.correct;
 
   answered.push({
     id: q.id,
     chosenDir,
+    chosenText,
     isCorrect: correct,
     correctDir: q.correctDir,
+    correctText,
     domain: q.domain,
     subdomain: q.subdomain,
     difficulty: q.difficulty,
     text: q.text,
-    correctAnswer: q.correct,
     expShort: q.expShort,
     expLong: q.expLong,
   });
@@ -384,10 +519,10 @@ function answer(chosenDir){
   if (correct) {
     xp += 10;
     correctCount += 1;
-    setLog("> SIGNAL ACQUIRED", `> +10 XP`, `> CORRECT (${chosenDir})`, "primary");
+    setLog("> SIGNAL ACQUIRED", `> +10 XP`, `> CORRECT: ${chosenText}`, "primary");
   } else {
     xp += 2;
-    setLog("> COLLISION", `> +2 XP`, `> WRONG (${chosenDir}) • EXPECTED (${q.correctDir})`, "danger");
+    setLog("> COLLISION", `> +2 XP`, `> WRONG: ${chosenText} • EXPECTED: ${correctText}`, "danger");
   }
   updateHeader();
 
@@ -395,8 +530,7 @@ function answer(chosenDir){
   const topCard = els.stack.querySelector(".card:not(.locked)");
   if (topCard) {
     topCard.style.transition = "transform 0.22s ease, opacity 0.22s ease";
-    const off = swipeTransform(chosenDir);
-    topCard.style.transform = off;
+    topCard.style.transform = swipeTransform(chosenDir);
     topCard.style.opacity = "0";
   }
 
@@ -428,7 +562,7 @@ function renderResults(){
   card.style.zIndex = "5";
 
   card.innerHTML = `
-    <div class="card-q" style="font-family:var(--font-code); font-size:1.05rem; color:#ddd;">
+    <div class="card-q" style="flex:0; min-height:auto; overflow:visible; font-family:var(--font-code); font-size:1.05rem; color:#ddd;">
       QUIZ COMPLETE
       <div style="height:12px"></div>
       <div style="font-family:var(--font-serif); font-size:1.8rem; font-weight:700; color:var(--gold);">${correctCount}/${total}</div>
@@ -486,7 +620,8 @@ async function exportPDF(){
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
-      doc.text(`Chosen: ${a.chosenDir} | Expected: ${a.correctDir} | ${a.isCorrect ? "CORRECT" : "WRONG"}`, margin, y); y += lineH;
+      doc.text(`Chosen: ${a.chosenText} (${a.chosenDir})`, margin, y); y += lineH;
+      doc.text(`Expected: ${a.correctText} (${a.correctDir}) | ${a.isCorrect ? "CORRECT" : "WRONG"}`, margin, y); y += lineH;
 
       if (a.expShort) {
         const lines = doc.splitTextToSize(`Note: ${a.expShort}`, w - margin*2);
@@ -517,6 +652,5 @@ function truncate(s, n){
   render();
 })();
 </script>
-
 </body>
 </html>

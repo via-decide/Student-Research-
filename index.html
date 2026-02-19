@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>| decide.engine | Decision Research</title>
+
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#0a0a0a" />
   <meta name="background-color" content="#0a0a0a" />
@@ -77,6 +78,7 @@
       opacity:0;pointer-events:none;transform:translateX(20px);
       transition:transform .3s ease,opacity .3s ease;
       overflow-y:auto;-webkit-overflow-scrolling:touch;
+      min-height:0;
     }
     .sub-slide.opt-active{z-index:30;opacity:1;pointer-events:auto;transform:translateX(0);}
     .sub-slide.static{z-index:30;opacity:1;pointer-events:auto;transform:none;}
@@ -84,15 +86,20 @@
     h1{
       font-size:1.9rem;margin:0 0 12px 0;line-height:1.1;letter-spacing:-1px;
       color:var(--brand-orange);
+      overflow-wrap:anywhere;
+      word-break:break-word;
     }
     .primary-question{
       font-size:1.05rem;color:#fff;margin-bottom:16px;line-height:1.45;font-weight:600;
+      overflow-wrap:anywhere;
     }
     .context-panel{
       background:#0f1318;border:1px solid #2a3342;border-radius:14px;
       padding:14px;margin-bottom:12px;box-shadow:0 10px 25px rgba(0,0,0,.25);
+      min-width:0;
+      overflow:hidden;
     }
-    .context-top{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;}
+    .context-top{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;min-width:0;}
     .thumb{
       width:64px;height:64px;border-radius:14px;background:#111;border:1px solid #2a3342;
       flex:0 0 auto;overflow:hidden;display:flex;align-items:center;justify-content:center;
@@ -108,11 +115,15 @@
     .stat-chip{
       font-family:var(--font-tech);font-size:.65rem;background:#0b0f14;color:#c0c7d6;
       padding:6px 10px;border-radius:999px;border:1px solid #2a3342;
+      max-width:100%;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     }
     .wiki-meta{display:flex;gap:8px;margin:10px 0 6px;flex-wrap:wrap;}
     .meta-chip{
       font-family:var(--font-tech);font-size:.65rem;background:#0b0f14;color:#c0c7d6;
       padding:6px 10px;border-radius:999px;border:1px solid #2a3342;
+      max-width:100%;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     }
     .section-title{
       font-family:var(--font-tech);font-size:.7rem;color:#9aa3b2;letter-spacing:1px;
@@ -125,12 +136,14 @@
       user-select:text;-webkit-user-select:text;
     }
     .takeaways ul{margin:8px 0 0 18px;padding:0;}
-    .takeaways li{color:#d6dde8;line-height:1.55;margin:6px 0;font-size:.95rem;}
+    .takeaways li{color:#d6dde8;line-height:1.55;margin:6px 0;font-size:.95rem;overflow-wrap:anywhere;}
     .wiki-summary{
       font-size:.98rem;color:#d6dde8;line-height:1.75;max-height:36vh;overflow-y:auto;
       padding:14px;background:#0b0f14;border-radius:12px;border:1px solid #2a3342;
       touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
       user-select:text;-webkit-user-select:text;
+      overflow-wrap:anywhere;
+      word-break:break-word;
     }
     .wiki-summary p{margin:0 0 12px 0;}
     .wiki-summary p:last-child{margin-bottom:0;}
@@ -141,22 +154,13 @@
       font-family:var(--font-tech);font-size:.7rem;color:#666;
       display:flex;justify-content:space-between;
     }
-    .input-group{
-      border:1px solid #333;background:#111;padding:20px;border-radius:8px;
-      margin-bottom:20px;min-height:100px;max-height:40vh;overflow-y:auto;
-    }
-    .input-row{
-      display:flex;justify-content:space-between;border-bottom:1px dashed #333;padding:10px 0;
-      font-family:var(--font-tech);font-size:.8rem;
-    }
-    .input-key{color:#888;text-transform:uppercase;}
-    .input-val{color:var(--accent-go);font-weight:bold;text-align:right;}
     .final-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px;}
     .btn{
       background:#1c1c1c;color:#fff;border:1px solid #2a3342;
       padding:14px 14px;border-radius:12px;font-weight:700;text-align:center;
       font-size:.82rem;cursor:pointer;display:block;width:100%;box-sizing:border-box;
       transition:transform .12s ease,opacity .2s ease;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     }
     .btn:active{transform:scale(.99);opacity:.95;}
     .btn-full{grid-column:span 2;}
@@ -170,6 +174,7 @@
       background:#161616;border:1px solid #2a3342;color:#c0c7d6;
       padding:18px;font-size:1.05rem;font-weight:800;text-transform:uppercase;border-radius:14px;
       transition:all .2s;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     }
     .cuisine-btn.selected{background:var(--brand-orange);color:#000;border-color:var(--brand-orange);}
     #search-input{
@@ -187,6 +192,8 @@
       position:fixed;bottom:100px;left:50%;transform:translateX(-50%);
       background:#0b0f14;color:#00e676;padding:10px 18px;border:1px solid #00e676;border-radius:999px;
       font-size:.8rem;opacity:0;pointer-events:none;transition:opacity .25s;z-index:3000;font-family:var(--font-tech);
+      max-width:min(92vw,520px);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     }
     .toast-msg.visible{opacity:1;}
     #mic-toggle{
@@ -328,7 +335,7 @@
   <div id="toast" class="toast-msg"></div>
 
   <div id="mic-toggle" onclick="toggleListenMode()">
-    <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66-1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+    <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
   </div>
 
   <!-- Quick Panel Toggle -->
@@ -437,12 +444,11 @@
   <!-- Hidden Pro UI render root -->
   <div id="pro-ui-root" aria-hidden="true"></div>
 
-  <script>
+<script>
 /* =========================================
-   DECISION RESEARCH ENGINE + UPGRADES v1.1
-   + ALCHEMIST QUIZ INTEGRATION v1.0
-   - Creates Alchemist JSON on click
-   - Opens alchemist.html (same folder)
+   DECIDE OS | Decision Research (patched)
+   - FIX: Alchemist injection now ships real option text by direction:
+     Option_UP / Option_RIGHT / Option_LEFT / Option_DOWN
 ========================================= */
 
 /* ====== ALCHEMIST INJECTION KEY ====== */
@@ -685,7 +691,6 @@ function confidenceFor(source) {
 }
 
 /* ---------- External actions ---------- */
-const AMZN_TAG = "decideos-21";
 function openYouTubeSearch(topic) {
   const q = encodeURIComponent((topic || "") + " explained");
   window.open(`https://www.youtube.com/results?search_query=${q}`, '_blank');
@@ -696,52 +701,86 @@ function openWikipedia(title){
 }
 
 /* =========================================
-ALCHEMIST QUIZ INTEGRATION
-- builds a quick quiz from research nodes
-- stores to localStorage under ALCHEMIST_LS_KEY
-- opens alchemist.html (same folder)
+ALCHEMIST QUIZ INTEGRATION (PATCHED)
+- ✅ Sends real option text per swipe direction:
+  Option_UP / Option_RIGHT / Option_LEFT / Option_DOWN
 ========================================= */
 function buildAlchemistPayloadFromResearch(nodes, { maxQ = 12 } = {}) {
   const list = Array.isArray(nodes) ? nodes.slice(0, maxQ) : [];
   const out = [];
   const now = Date.now();
 
-  function pick2Distractors(allTitles, correctTitle){
-    const pool = allTitles.filter(t => t && t !== correctTitle);
-    // shuffle
-    for (let i = pool.length - 1; i > 0; i--) {
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
+      [a[i], a[j]] = [a[j], a[i]];
     }
-    return [pool[0] || "—", pool[1] || "—"];
-  }
-  function dirByIndex(i){
-    const dirs = ["UP","RIGHT","LEFT","DOWN"];
-    return dirs[i % dirs.length];
+    return a;
   }
 
-  const titles = list.map(n => normalizeText(n?.title || "")).filter(Boolean);
+  function pickNDistractors(allTitles, correctTitle, n = 3) {
+    const pool = allTitles.filter(t => t && t !== correctTitle);
+    const s = shuffle(pool);
+    const picked = s.slice(0, n);
+    while (picked.length < n) picked.push("—");
+    return picked;
+  }
+
+  const titles = list
+    .map(n => normalizeText(n?.title || ""))
+    .filter(Boolean);
+
+  const DIRECTIONS = ["UP", "RIGHT", "LEFT", "DOWN"];
 
   list.forEach((n, i) => {
-    const title = normalizeText(n?.title || `Node ${i+1}`);
+    const title = normalizeText(n?.title || `Node ${i + 1}`);
+
     const sents = splitIntoSentences(n?.summary || "");
-    const qText = sents[0] || (n?.summary ? normalizeText(n.summary).slice(0, 140) : "");
-    const prompt = qText
-      ? `Which node best matches this summary snippet?\n\n“${qText}”`
+    const snippet =
+      sents[0] ||
+      (n?.summary ? normalizeText(n.summary).slice(0, 160) : "");
+
+    const prompt = snippet
+      ? `Which node best matches this summary snippet?\n\n“${snippet}”`
       : `Which node is this?`;
 
-    const [d1, d2] = pick2Distractors(titles, title);
+    // 4 visible options (1 correct + 3 wrong)
+    const [d1, d2, d3] = pickNDistractors(titles, title, 3);
+
+    // Randomize which direction contains the correct answer
+    const dirOrder = shuffle(DIRECTIONS);
+    const optionByDir = {};
+    optionByDir[dirOrder[0]] = title; // correct
+    optionByDir[dirOrder[1]] = d1;
+    optionByDir[dirOrder[2]] = d2;
+    optionByDir[dirOrder[3]] = d3;
+
+    const correctDir = Object.keys(optionByDir).find(k => optionByDir[k] === title) || "UP";
+
     out.push({
-      Question_ID: `R_${now}_${String(i+1).padStart(3,"0")}`,
+      Question_ID: `R_${now}_${String(i + 1).padStart(3, "0")}`,
       Set_Code: "RESEARCH",
       Domain: "Decision Research",
       Subdomain: normalizeText(n?.sourceName || n?.source || "wiki").toUpperCase(),
-      Difficulty: String(Math.min(5, Math.max(1, Math.round((wordCount(n?.summary || "") / 120) || 2)))),
+      Difficulty: String(
+        Math.min(5, Math.max(1, Math.round((wordCount(n?.summary || "") / 120) || 2)))
+      ),
       Question_Text: prompt,
+
+      // Legacy fields (still ok)
       Correct_Answer: title,
       Distractor_1: d1,
       Distractor_2: d2,
-      Correct_Direction: dirByIndex(i),
+      Distractor_3: d3,
+      Correct_Direction: correctDir,
+
+      // ✅ New per-direction option text
+      Option_UP: optionByDir.UP,
+      Option_RIGHT: optionByDir.RIGHT,
+      Option_LEFT: optionByDir.LEFT,
+      Option_DOWN: optionByDir.DOWN,
+
       Explanation_Short: "Pick the node title that matches the summary snippet.",
       Explanation_Long: (n?.url ? `Source: ${n.url}` : "Source: (none)")
     });
@@ -757,7 +796,6 @@ function launchAlchemistQuiz(){
     const payload = buildAlchemistPayloadFromResearch(nodes, { maxQ: 12 });
     localStorage.setItem(ALCHEMIST_LS_KEY, JSON.stringify(payload));
     showToast("QUIZ READY");
-    // Open in same folder
     window.open("alchemist.html", "_blank");
   }catch(e){
     console.error(e);
@@ -850,20 +888,16 @@ PROJECT PERSISTENCE + SHARE LINKS
 const PROJECTS_INDEX_KEY = "decideos_projects_v1";
 const LAST_PROJECT_KEY = "decideos_last_project_id_v1";
 const PROJECT_PREFIX = "decideos_project_";
-
 let CURRENT_PROJECT = null;
 
 function uid(){
   return "p_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
 }
 function getProjectsIndex(){
-  try{
-    return JSON.parse(localStorage.getItem(PROJECTS_INDEX_KEY) || "{}");
-  }catch(e){ return {}; }
+  try{ return JSON.parse(localStorage.getItem(PROJECTS_INDEX_KEY) || "{}"); }
+  catch(e){ return {}; }
 }
-function setProjectsIndex(idx){
-  localStorage.setItem(PROJECTS_INDEX_KEY, JSON.stringify(idx));
-}
+function setProjectsIndex(idx){ localStorage.setItem(PROJECTS_INDEX_KEY, JSON.stringify(idx)); }
 function saveProjectToStorage(project){
   const idx = getProjectsIndex();
   idx[project.id] = { id: project.id, name: project.name, updatedAt: project.updatedAt, createdAt: project.createdAt };
@@ -1236,7 +1270,7 @@ function openTool(){
 }
 
 /* =========================================
-Minimal existing Lobby (kept)
+Minimal Lobby
 ========================================= */
 const FALLBACK_MENU = {
   "smartphones": { label: "SMARTPHONES", categories: [{label: "BUDGET <10K", items: [{"name":"Samsung Galaxy F07"},{"name":"Realme Note 60"}]}] },
@@ -1694,7 +1728,7 @@ function renderEndSlide(){
 }
 
 /* =========================================
-PDF: Classic Research PDF
+PDF: Classic Research PDF (syntax-fixed)
 ========================================= */
 function sanitizeForPDF(text){
   return normalizeText(text).replace(/[^\x00-\xFF]/g, "");
@@ -1709,6 +1743,7 @@ async function generateResearchPDF() {
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 18;
     const contentWidth = pageWidth - (2 * margin);
+
     const addFooter = (pageNum, totalPages) => {
       doc.setFontSize(7);
       doc.setTextColor(150,150,150);
@@ -1855,7 +1890,7 @@ async function generateResearchPDF() {
 }
 
 /* =========================================
-DECISION PRO UI PDF
+DECISION PRO UI PDF (syntax-fixed)
 ========================================= */
 function buildDecisionProModel() {
   const nodes = ENGINE_STATE.research_nodes || [];
@@ -1954,6 +1989,7 @@ function renderDecisionProDocHTML(model) {
           ${model.nodes.map(n => `<li>#${n.idx} — ${esc(n.title)}</li>`).join("")}
         </ul>
       </div>
+
       <div class="proui-wm">${wm}</div>
     </div>
   `;
@@ -2068,6 +2104,7 @@ function renderDecisionProDocHTML(model) {
 }
 async function generateDecisionProUIPDF() {
   if (!ENGINE_STATE.research_nodes || ENGINE_STATE.research_nodes.length === 0) return showToast("NO NODES");
+
   if (!ENGINE_STATE.synthesis) {
     const aggregated = [];
     ENGINE_STATE.research_nodes.forEach(n => aggregated.push(...extractTakeaways(n.summary || "", 4)));
@@ -2080,11 +2117,13 @@ async function generateDecisionProUIPDF() {
       recommendation: ''
     };
   }
+
   showToast("EXPORTING DECISION PDF...");
   try {
     const model = buildDecisionProModel();
     const root = document.getElementById("pro-ui-root");
     root.innerHTML = renderDecisionProDocHTML(model);
+
     const filename = `decision-brief-${new Date().toISOString().slice(0,10)}.pdf`;
     const opt = {
       margin: 0,
@@ -2093,6 +2132,7 @@ async function generateDecisionProUIPDF() {
       html2canvas: { scale: 2, useCORS: true, backgroundColor: "#0b1220" },
       jsPDF: { unit: "pt", format: "a4", orientation: "portrait" }
     };
+
     await html2pdf().set(opt).from(root.firstElementChild).save();
     showToast("DECISION PDF DOWNLOADED!");
   } catch (e) {
@@ -2187,6 +2227,7 @@ function boot(){
   }
 }
 boot();
-  </script>
+</script>
+
 </body>
-</html>
+  </html>

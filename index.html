@@ -4,13 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>| decide.engine | Decision Research</title>
+
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#0a0a0a" />
   <meta name="background-color" content="#0a0a0a" />
+
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="decide.engine" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
+
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="application-name" content="decide.engine" />
   <meta name="description" content="Voice-first decision engine with decision-linked research" />
@@ -328,7 +331,10 @@
   <div id="toast" class="toast-msg"></div>
 
   <div id="mic-toggle" onclick="toggleListenMode()">
-    <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66-1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+    <svg viewBox="0 0 24 24">
+      <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66-1.34 3 3 3z"/>
+      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+    </svg>
   </div>
 
   <!-- Quick Panel Toggle -->
@@ -437,13 +443,11 @@
   <!-- Hidden Pro UI render root -->
   <div id="pro-ui-root" aria-hidden="true"></div>
 
-  <script>
+<script>
 /* =========================================
-   DECISION RESEARCH ENGINE + UPGRADES v1.1
-   + ALCHEMIST QUIZ INTEGRATION v1.0 (PATCHED)
-   - Writes Alchemist JSON on click
-   - Opens alchemist.html (same folder)
-   - Fixes Research PDF context (decision meta + synthesis, no dilution)
+   DECISION RESEARCH ENGINE + UPGRADES v1.2
+   + ALCHEMIST QUIZ INTEGRATION v1.1
+   + XP SYNC + SYNTHESIS SCORE (PATCHED)
 ========================================= */
 
 /* ====== ALCHEMIST INJECTION KEY ====== */
@@ -464,12 +468,12 @@ async function fetchJSON(url, { timeoutMs = 9000 } = {}) {
 
 /* ---------- helpers ---------- */
 function escapeHTML(str){
-  return (str ?? "")
+  return String(str ?? "")
     .replaceAll("&","&amp;")
     .replaceAll("<","&lt;")
     .replaceAll(">","&gt;")
     .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
+    .replaceAll("'","&#39;");
 }
 function normalizeText(text){
   return (text || "").replace(/\s+/g, " ").replace(/\u00AD/g, "").trim();
@@ -477,7 +481,10 @@ function normalizeText(text){
 function splitIntoSentences(text){
   const t = normalizeText(text);
   if(!t) return [];
-  return t.split(/(?<=[.!?])\s+(?=[A-Z0-9"“(])/g).map(s => s.trim()).filter(Boolean);
+  return t
+    .split(/(?<=[.!?])\s+(?=[A-Z0-9"“(])/g)
+    .map(s => s.trim())
+    .filter(Boolean);
 }
 function extractTakeaways(summary, max = 4){
   const s = splitIntoSentences(summary);
@@ -517,6 +524,81 @@ function showToast(m) {
 /* ---------- Voice stubs ---------- */
 function toggleListenMode(){ showToast("VOICE: NOT IMPLEMENTED"); }
 function initVoice(){}
+
+/* =========================================
+STATE
+========================================= */
+let ENGINE_STATE = {
+  cuisines_detected: [],
+  items_detected: {},
+  session_weights: {},
+  active_filters: [],
+  research_history: [],
+  research_nodes: [],
+  synthesis: null,
+
+  // PATCH STEP 1
+  quizStats: null,
+  synthesisScore: null
+};
+
+let slideElements = [];
+let currentIdx = 0;
+let currentDecisionContext = null;
+
+/* =========================================
+PATCH STEP 2 — XP Sync Watcher
+========================================= */
+function checkAlchemistResults(){
+  const raw = localStorage.getItem("ALCHEMIST_RESULTS");
+  if(!raw) return;
+
+  try{
+    const data = JSON.parse(raw);
+    localStorage.removeItem("ALCHEMIST_RESULTS");
+
+    ENGINE_STATE.quizStats = data;
+
+    showToast(`QUIZ: ${data.accuracy}% • +${data.xp} XP`);
+
+    scoreSynthesis();
+    autosaveProjectIfPossible();
+    updateUIPanel();
+
+  }catch(e){}
+}
+
+/* =========================================
+PATCH STEP 3 — Synthesis Scoring Logic
+========================================= */
+function scoreSynthesis(){
+  const quiz = ENGINE_STATE.quizStats;
+  if(!quiz) return;
+
+  let baseScore = Number(quiz.accuracy || 0);
+
+  if((ENGINE_STATE.research_nodes || []).length > 4) baseScore += 5;
+  if((ENGINE_STATE.synthesis?.topTakeaways || []).length >= 4) baseScore += 5;
+
+  ENGINE_STATE.synthesisScore = Math.min(100, baseScore);
+}
+
+/* ---------- Confidence helper ---------- */
+function confidenceFor(source) {
+  if (source === 'wiki' || source === 'travel') return 'High';
+  if (source === 'wikibooks') return 'Medium';
+  return 'Low';
+}
+
+/* ---------- External actions ---------- */
+function openYouTubeSearch(topic) {
+  const q = encodeURIComponent((topic || "") + " explained");
+  window.open(`https://www.youtube.com/results?search_query=${q}`, '_blank');
+}
+function openWikipedia(title){
+  const q = encodeURIComponent(title || "");
+  window.open(`https://en.wikipedia.org/wiki/Special:Search?search=${q}`, "_blank");
+}
 
 /* ---------- Quick Panel ---------- */
 function isUIPanelOpen(){
@@ -583,7 +665,18 @@ function updateUIPanel(){
   if (nodesEl) nodesEl.textContent = String(nodes);
   if (srcEl) srcEl.textContent = activeSrc ? String(activeSrc).toUpperCase() : "-";
   if (lastEl) lastEl.textContent = String(lastNode);
-  if (badgeEl) badgeEl.textContent = domain === 'research' ? `NODES: ${nodes}` : String(domain).toUpperCase();
+
+  // PATCH STEP 3 — badge logic
+  if (badgeEl){
+    if(ENGINE_STATE.synthesisScore){
+      badgeEl.textContent = `SCORE ${ENGINE_STATE.synthesisScore}`;
+    } else {
+      badgeEl.textContent = domain === 'research'
+        ? `NODES: ${nodes}`
+        : String(domain).toUpperCase();
+    }
+  }
+
   if (timeEl) timeEl.textContent = nowIST();
   if (hintEl) hintEl.textContent = isUIPanelOpen() ? "Tap outside to close" : "Ready";
   if (projEl) projEl.textContent = CURRENT_PROJECT?.name ? CURRENT_PROJECT.name.toUpperCase() : "-";
@@ -631,8 +724,10 @@ function loadNotes(){
     if (!ta) return;
     const saved = localStorage.getItem(NOTES_KEY);
     if (saved !== null) ta.value = saved;
+
     const badge = document.getElementById('notes-badge');
     if (badge) badge.textContent = saved && saved.trim() ? "RESTORED" : "LOCAL";
+
     const savedEl = document.getElementById('notes-saved');
     if (savedEl) savedEl.textContent = saved && saved.trim() ? "Restored" : "Not saved";
   }catch(e){ console.error(e); }
@@ -678,29 +773,12 @@ setInterval(() => {
   updateNotesMeta();
 }, 1200);
 
-/* ---------- Confidence helper ---------- */
-function confidenceFor(source) {
-  if (source === 'wiki' || source === 'travel') return 'High';
-  if (source === 'wikibooks') return 'Medium';
-  return 'Low';
-}
-
-/* ---------- External actions ---------- */
-function openYouTubeSearch(topic) {
-  const q = encodeURIComponent((topic || "") + " explained");
-  window.open(`https://www.youtube.com/results?search_query=${q}`, '_blank');
-}
-function openWikipedia(title){
-  const q = encodeURIComponent(title || "");
-  window.open(`https://en.wikipedia.org/wiki/Special:Search?search=${q}`, "_blank");
-}
+// PATCH STEP 2 interval
+setInterval(checkAlchemistResults, 1500);
 
 /* =========================================
-ALCHEMIST QUIZ INTEGRATION (PATCHED)
-- true 4-choice directional mapping
-- 3 distractors always
-- stores to localStorage under ALCHEMIST_LS_KEY
-- opens alchemist.html (same folder)
+ALCHEMIST QUIZ INTEGRATION (UPGRADED 4-DIR)
+PATCH STEP 4: Replace builder (already upgraded)
 ========================================= */
 function buildAlchemistPayloadFromResearch(nodes, { maxQ = 12 } = {}) {
   const list = Array.isArray(nodes) ? nodes.slice(0, maxQ) : [];
@@ -739,7 +817,7 @@ function buildAlchemistPayloadFromResearch(nodes, { maxQ = 12 } = {}) {
 
     const prompt = snippet
       ? `Which node best matches this summary snippet?\n\n“${snippet}”`
-      : `Which node is this?`;
+      : "Which node is this?";
 
     const [d1, d2, d3] = pickNDistractors(titles, title, 3);
 
@@ -989,7 +1067,9 @@ function buildProjectFromCurrentState(){
     engineState: {
       research_nodes: nodes,
       synthesis: syn,
-      notes: notes
+      notes: notes,
+      quizStats: ENGINE_STATE.quizStats || null,
+      synthesisScore: ENGINE_STATE.synthesisScore || null
     }
   };
   return project;
@@ -1004,6 +1084,8 @@ function loadProjectIntoApp(project){
   ENGINE_STATE.cuisines_detected = ["research"];
   ENGINE_STATE.research_nodes = Array.isArray(project?.engineState?.research_nodes) ? project.engineState.research_nodes : [];
   ENGINE_STATE.synthesis = project?.engineState?.synthesis || null;
+  ENGINE_STATE.quizStats = project?.engineState?.quizStats || null;
+  ENGINE_STATE.synthesisScore = project?.engineState?.synthesisScore || null;
 
   if (ENGINE_STATE.research_nodes.length) {
     openStoredDeck(ENGINE_STATE.research_nodes, ENGINE_STATE.synthesis);
@@ -1151,22 +1233,6 @@ const DEFAULT_EXAMPLES = [
 ];
 
 /* =========================================
-STATE
-========================================= */
-let ENGINE_STATE = {
-  cuisines_detected: [],
-  items_detected: {},
-  session_weights: {},
-  active_filters: [],
-  research_history: [],
-  research_nodes: [],
-  synthesis: null
-};
-let slideElements = [];
-let currentIdx = 0;
-let currentDecisionContext = null;
-
-/* =========================================
 Landing / Welcome
 ========================================= */
 function goHome(){
@@ -1182,11 +1248,10 @@ function renderLanding(){
 
   const lastId = localStorage.getItem(LAST_PROJECT_KEY);
   const hasLast = !!(lastId && loadProjectFromStorage(lastId));
-  const examplesHtml = DEFAULT_EXAMPLES.map(ex => `
-    <button class="cuisine-btn" onclick="openExample('${escapeHTML(ex.id)}')">
-      ${escapeHTML(ex.name)}
-    </button>
-  `).join("");
+
+  const examplesHtml = DEFAULT_EXAMPLES.map(ex =>
+    `<button class="cuisine-btn" onclick="openExample('${escapeHTML(ex.id)}')">${escapeHTML(ex.name)}</button>`
+  ).join("");
 
   const section = document.createElement('section');
   section.className = "main-slide active";
@@ -1214,9 +1279,7 @@ function renderLanding(){
 
       <div class="context-panel">
         <div class="section-title" style="margin-top:0">Try an example</div>
-        <div style="display:grid; gap:12px;">
-          ${examplesHtml}
-        </div>
+        <div style="display:grid; gap:12px;">${examplesHtml}</div>
       </div>
 
       <div class="final-actions">
@@ -1232,10 +1295,14 @@ function renderLanding(){
   container.appendChild(section);
   slideElements = [section];
   currentIdx = 0;
+
   ENGINE_STATE.cuisines_detected = ["home"];
   ENGINE_STATE.research_nodes = [];
   ENGINE_STATE.synthesis = null;
+  ENGINE_STATE.quizStats = null;
+  ENGINE_STATE.synthesisScore = null;
   CURRENT_PROJECT = null;
+
   updateUIPanel();
 }
 
@@ -1282,6 +1349,7 @@ function renderLobby() {
   container.innerHTML = "";
   const section = document.createElement('section');
   section.className = "main-slide active";
+
   let html = `
     <div class="slide-header">
       <span class="header-title">DECIDE OS</span>
@@ -1318,6 +1386,8 @@ function handleStart() {
   if (domain === "research") {
     ENGINE_STATE.research_nodes = [];
     ENGINE_STATE.synthesis = null;
+    ENGINE_STATE.quizStats = null;
+    ENGINE_STATE.synthesisScore = null;
     CURRENT_PROJECT = null;
     renderSearchSlide();
   } else {
@@ -1450,6 +1520,7 @@ function renderDecisionMetaSlide(ctx){
     <div class="sub-slide static article-view">
       <h1>Link this node</h1>
       <div class="primary-question">Capture the decision context that this research supports.</div>
+
       <div class="context-panel">
         <div class="section-title" style="margin-top:0">Decision context</div>
         <div style="display:grid; gap:10px;">
@@ -1460,6 +1531,7 @@ function renderDecisionMetaSlide(ctx){
           <div><input id="meta-options" type="text" placeholder="Option set (e.g. A/B/C)" style="width:100%; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;"></div>
         </div>
       </div>
+
       <div class="final-actions">
         <button class="btn btn-full btn-pro" onclick="saveDecisionMeta()">SAVE META</button>
         <button class="btn btn-full" onclick="skipDecisionMeta()">SKIP</button>
@@ -1549,10 +1621,14 @@ function renderNodeSlide(node, isFirst){
       <span class="header-title">NODE</span>
       <span class="header-badge">${escapeHTML((node.sourceName || 'LOCAL').toUpperCase())}</span>
     </div>
+
     <div class="sub-slide static article-view">
       <div class="context-panel">
         <div class="context-top">
-          <div class="thumb">${node.thumbnail ? `<img src="${escapeHTML(node.thumbnail)}" alt="">` : 'THUMB'}</div>
+          <div class="thumb">
+            ${node.thumbnail ? `<img src="${escapeHTML(node.thumbnail)}" alt="">` : 'THUMB'}
+          </div>
+
           <div class="context-title-wrap">
             <div class="context-kicker">Research node • Confidence: ${escapeHTML(node.confidence || 'High')}</div>
             <h1 style="margin-bottom:6px;">${escapeHTML(node.title || 'Untitled')}</h1>
@@ -1588,6 +1664,7 @@ function renderNodeSlide(node, isFirst){
           <button class="btn btn-full" onclick="shareCurrentProject()">SHARE LINK</button>
         </div>
       </div>
+
       <div class="nav-hint"><span>Swipe up/down: slides</span><span>Tap ☰: panel</span></div>
     </div>
   `;
@@ -1635,26 +1712,32 @@ function openSynthesisSlide() {
         <div class="section-title">Working thesis</div>
         <textarea id="syn-thesis" style="width:100%; min-height:80px; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;">${escapeHTML(syn.thesis || '')}</textarea>
       </div>
+
       <div class="context-panel">
         <div class="section-title">Top takeaways</div>
-        <textarea id="syn-top" style="width:100%; min-height:80px; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;">${escapeHTML((syn.topTakeaways || top).join('\n'))}</textarea>
+        <textarea id="syn-top" style="width:100%; min-height:80px; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;">${escapeHTML((syn.topTakeaways || top).join('\\n'))}</textarea>
       </div>
+
       <div class="context-panel">
         <div class="section-title">Contradictions / open questions</div>
         <textarea id="syn-contradictions" style="width:100%; min-height:60px; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;">${escapeHTML(syn.contradictions || '')}</textarea>
       </div>
+
       <div class="context-panel">
         <div class="section-title">Decision implications</div>
         <textarea id="syn-implications" style="width:100%; min-height:60px; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;">${escapeHTML(syn.implications || '')}</textarea>
       </div>
+
       <div class="context-panel">
         <div class="section-title">Next research nodes</div>
         <textarea id="syn-next" style="width:100%; min-height:60px; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;">${escapeHTML(syn.next || '')}</textarea>
       </div>
+
       <div class="context-panel">
         <div class="section-title">Recommendation signals</div>
         <textarea id="syn-rec" style="width:100%; min-height:60px; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;">${escapeHTML(syn.recommendation || '')}</textarea>
       </div>
+
       <div class="final-actions">
         <button class="btn btn-full btn-pro" onclick="saveSynthesis()">SAVE</button>
         <button class="btn btn-full" onclick="closeSynthesisSlide()">CLOSE</button>
@@ -1674,6 +1757,7 @@ function saveSynthesis(){
     next: document.getElementById('syn-next')?.value?.trim() || '',
     recommendation: document.getElementById('syn-rec')?.value?.trim() || ''
   };
+  scoreSynthesis();
   showToast("SAVED");
   autosaveProjectIfPossible();
 }
@@ -1726,7 +1810,8 @@ function renderEndSlide(){
 }
 
 /* =========================================
-PDF: Classic Research PDF (PATCHED: context + synthesis, no dilution)
+PDF: Classic Research PDF (PATCH STEP 5)
+Non-diluted: decision context + full summaries + synthesis + hierarchy
 ========================================= */
 function sanitizeForPDF(text){
   return normalizeText(text).replace(/[^\x00-\xFF]/g, "");
@@ -1986,6 +2071,7 @@ async function generateResearchPDF() {
 
     doc.save(`decision-research-${new Date().toISOString().slice(0,10)}.pdf`);
     showToast("PDF DOWNLOADED");
+
   } catch (e) {
     console.error("PDF generation error:", e);
     showToast("PDF FAILED");
@@ -1993,7 +2079,7 @@ async function generateResearchPDF() {
 }
 
 /* =========================================
-DECISION PRO UI PDF (unchanged)
+DECISION PRO UI PDF (kept)
 ========================================= */
 function buildDecisionProModel() {
   const nodes = ENGINE_STATE.research_nodes || [];
@@ -2092,6 +2178,7 @@ function renderDecisionProDocHTML(model) {
           ${model.nodes.map(n => `<li>#${n.idx} — ${esc(n.title)}</li>`).join("")}
         </ul>
       </div>
+
       <div class="proui-wm">${wm}</div>
     </div>
   `;
@@ -2179,7 +2266,6 @@ function renderDecisionProDocHTML(model) {
       </div>
 
       <div style="height:12px"></div>
-
       <div class="proui-grid2">
         <div class="proui-card">
           <div class="proui-h">Decision implications</div>
@@ -2192,7 +2278,6 @@ function renderDecisionProDocHTML(model) {
       </div>
 
       <div style="height:12px"></div>
-
       <div class="proui-card">
         <div class="proui-h">Recommendation signals</div>
         <div class="proui-small">${esc(syn.recommendation || "")}</div>
@@ -2325,6 +2410,17 @@ function boot(){
   }
 }
 boot();
-  </script>
+
+/* =========================================
+PATCH STEP 6 — Service Worker Registration
+========================================= */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js")
+      .then(reg => console.log("SW registered:", reg.scope))
+      .catch(err => console.log("SW failed:", err));
+  });
+}
+</script>
 </body>
-        </html>
+</html>

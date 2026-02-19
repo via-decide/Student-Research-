@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Alchemist | Kinetic</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Alchemist Quiz</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -24,7 +23,6 @@
       font-family:var(--font-sans); overflow:hidden;
       display:flex; flex-direction:column;
     }
-
     #header{width:90%; margin:25px auto 0; z-index:100; flex-shrink:0;}
     .header-meta{
       display:flex; justify-content:space-between;
@@ -34,7 +32,6 @@
     }
     .progress-track{width:100%; height:3px; background:#222; border-radius:2px;}
     #progress-bar{height:100%; background:var(--gold); width:0%; transition:width 0.4s ease; border-radius:2px;}
-
     #kinetic-logger{
       width:90%; margin:15px auto 5px; font-family:var(--font-code);
       font-size:0.8rem; color:#444; line-height:1.4; text-transform:uppercase;
@@ -45,7 +42,14 @@
     .log-line.active{color:var(--green); opacity:1; font-weight:700;}
     .log-line.primary{color:var(--gold); opacity:1; font-weight:700;}
     .log-line.danger{color:var(--red); opacity:1; font-weight:700;}
-
+    #gyro-status{
+      position:absolute; top:20px; left:50%; transform:translateX(-50%);
+      font-family:var(--font-code); font-size:0.6rem; color:#444;
+      border:1px solid #333; padding:4px 8px; border-radius:4px;
+      opacity:0; transition:opacity 0.5s; pointer-events:none;
+      z-index:200;
+    }
+    #gyro-status.active{opacity:1; color:var(--gold); border-color:var(--gold);}    
     #stack{
       position:relative; width:90%; max-width:420px;
       height:calc(100vh - 220px - env(safe-area-inset-bottom));
@@ -54,7 +58,6 @@
       display:flex; align-items:center; justify-content:center;
       flex:1; min-height:0;
     }
-
     .card{
       position:absolute;
       width:100%; height:100%;
@@ -66,58 +69,47 @@
       transform-style:preserve-3d;
       overflow:hidden;
       transition: transform 0.18s ease, opacity 0.18s ease;
-
       display:flex;
       flex-direction:column;
       gap:12px;
       min-height:0;
     }
-    .card.locked{opacity:0.18; transform:scale(0.97); filter:grayscale(100%);}
-
+    .card.locked{opacity:0.18; transform:scale(0.97); filter:grayscale(100%);}    
     .card-q{
       flex:1;
       min-height:0;
       overflow:auto;
       -webkit-overflow-scrolling:touch;
-
       width:100%;
       padding:4px 4px;
-
       font-family:var(--font-serif);
       font-size:clamp(1.15rem, 4.8vw, 1.65rem);
       line-height:1.42;
       font-weight:600;
       text-align:center;
       color:var(--text-white);
-
       overflow-wrap:anywhere;
       word-break:break-word;
       hyphens:auto;
-
       display:flex;
       flex-direction:column;
       justify-content:center;
     }
     .card-q::-webkit-scrollbar{width:0px;}
-
     .chiprow{display:flex; flex-wrap:wrap; gap:8px; justify-content:center;}
     .chip{
       font-family:var(--font-code); font-size:0.65rem; color:#bbb;
       border:1px solid #2a2a2a; background:#080808;
       padding:6px 10px; border-radius:999px;
       text-transform:uppercase; letter-spacing:0.08em;
-      max-width:100%;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
+      max-width:100%; overflow:hidden;
+      text-overflow:ellipsis; white-space:nowrap;
     }
-
     .small{
       font-family:var(--font-code); font-size:0.72rem; color:#666;
       letter-spacing:0.08em; text-transform:uppercase; text-align:center; line-height:1.5;
     }
     .muted{color:#777;}
-
     .btnrow{
       display:grid;
       grid-template-columns:1fr 1fr;
@@ -127,28 +119,18 @@
       flex-shrink:0;
     }
     .btn{
-      width:100%;
-      border-radius:12px;
-      border:1px solid #2a2a2a;
-      background:#0b0b0b;
-      color:#fff;
-      padding:12px 10px;
-      font-weight:900;
+      width:100%; border-radius:12px;
+      border:1px solid #2a2a2a; background:#0b0b0b; color:#fff;
+      padding:12px 10px; font-weight:900;
       font-family:var(--font-code);
-      letter-spacing:0.06em;
-      cursor:pointer;
-      text-transform:uppercase;
+      letter-spacing:0.06em; cursor:pointer; text-transform:uppercase;
       line-height:1.15;
-
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     }
     .btn:active{transform:scale(0.99); opacity:0.95;}
     .btn-gold{border-color:rgba(255,214,0,.55); color:var(--gold);}
     .btn-green{border-color:rgba(46,204,113,.55); color:var(--green);}
     .btn-red{border-color:rgba(255,68,68,.55); color:var(--red);}
-
     .swipe-label{
       position:absolute; inset:0;
       display:flex; align-items:center; justify-content:center;
@@ -161,13 +143,10 @@
       transition:opacity 0.1s ease, transform 0.1s ease;
       border-radius:14px; color:var(--text-white); border:1px solid #444;
       transform:scale(0.92);
-
-      overflow-wrap:anywhere;
-      word-break:break-word;
-      hyphens:auto;
+      overflow-wrap:anywhere; word-break:break-word; hyphens:auto;
       line-height:1.25;
     }
-    .swipe-label.show{opacity:1; transform:scale(1);}
+    .swipe-label.show{opacity:1; transform:scale(1);}    
     .swipe-label .dirHint{
       display:block;
       margin-top:10px;
@@ -180,6 +159,7 @@
 </head>
 
 <body>
+  <div id="gyro-status">HYBRID SENSORS READY</div>
   <div id="header">
     <div class="header-meta">
       <span id="id-ui">VIA.STACK</span>
@@ -187,80 +167,112 @@
     </div>
     <div class="progress-track"><div id="progress-bar"></div></div>
   </div>
-
   <div id="kinetic-logger">
     <div class="log-line" id="log-1">> SYSTEM BOOT</div>
-    <div class="log-line" id="log-2">> AWAITING INJECTION</div>
+    <div class="log-line" id="log-2">> INJECTING DATA...</div>
     <div class="log-line active" id="log-3">> ...</div>
   </div>
-
   <div id="stack">
     <div class="card">
-      <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666;">
-        WAITING FOR PARENT PAYLOAD...
-      </div>
+      <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666;">LOADING KINETIC CORE...</div>
     </div>
   </div>
 
 <script>
-/* =========================================================
-   PATH B (CROSS-ORIGIN) BRIDGE
-   - Parent opens: alchemist.html?po=<PARENT_ORIGIN>&ru=<RETURN_URL>
-   - Parent injects payload via postMessage: { type:"ALCHEMIST_INJECT", payload:[...] }
-   - Child acks via: { type:"ALCHEMIST_ACK" }
-   - Child returns results via: { type:"ALCHEMIST_RESULTS", payload:{...} }
-   - Fallback: redirect to RETURN_URL#alchemist_results=<base64>
-========================================================= */
+/* =========================================
+   ALCHEMIST QUIZ APP WITH CROSS-ORIGIN INJECTION
+   This version implements handshake and messaging with Decision OS.
+========================================= */
 
-const urlParams = new URLSearchParams(location.search);
-const PARENT_ORIGIN = decodeURIComponent(urlParams.get("po") || "*");
-const RETURN_URL = decodeURIComponent(urlParams.get("ru") || "");
+// Parent origin for postMessage validation
+const PARENT_ORIGIN = "https://student-research.pages.dev";
+// Key for any fallback localStorage injection
+const ALCHEMIST_LS_KEY = "ALCHEMIST_INJECTED_DATA";
 
+// Quiz data and session state
+let INJECTED_DATA = [];
+let RECEIVED_SESSION = null;
+
+// Attempt to load any injected JSON from localStorage
+try {
+  const raw = localStorage.getItem(ALCHEMIST_LS_KEY);
+  if (raw) {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length) INJECTED_DATA = parsed;
+  }
+} catch(e) { INJECTED_DATA = []; }
+
+// Fallback example question if nothing injected
+if (!INJECTED_DATA.length) {
+  INJECTED_DATA = [{
+    Question_ID:"DEMO_001",
+    Set_Code:"DEMO",
+    Domain:"Decision OS",
+    Subdomain:"Onboarding",
+    Difficulty:"1",
+    Question_Text:"Which node matches this snippet?\n\n“Focus on what you can control.”",
+    Correct_Answer:"Dichotomy of control",
+    Distractor_1:"Stoicism",
+    Distractor_2:"CBT",
+    Distractor_3:"Marcus Aurelius",
+    Correct_Direction:"RIGHT",
+    Explanation_Short:"The control split points to that node.",
+    Explanation_Long:"Demo appears only when no injected JSON exists."
+  }];
+}
+
+// Dir helpers
 const ALL_DIRS = ["UP","RIGHT","LEFT","DOWN"];
-function normDir(d){ const x=String(d||"").trim().toUpperCase(); return ALL_DIRS.includes(x)?x:"UP"; }
+function normDir(d){
+  const x = String(d || "").trim().toUpperCase();
+  return (ALL_DIRS.includes(x)) ? x : "UP";
+}
 function escapeHTML(str){
   return String(str ?? "")
     .replaceAll("&","&amp;")
     .replaceAll("<","&lt;")
     .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
+    .replaceAll('"','&quot;')
     .replaceAll("'","&#039;");
 }
-function safeJSONParse(raw){ try { return JSON.parse(raw); } catch(e){ return null; } }
-
-function packB64(obj){
-  const s = JSON.stringify(obj);
-  return btoa(unescape(encodeURIComponent(s)));
-}
-function deliverToParent(type, payload){
-  let ok = false;
-  try{
-    if (window.opener && !window.opener.closed && PARENT_ORIGIN !== "*") {
-      window.opener.postMessage({ type, payload }, PARENT_ORIGIN);
-      ok = true;
-    }
-  }catch(e){}
-
-  // fallback only for RESULTS
-  if (!ok && type === "ALCHEMIST_RESULTS" && RETURN_URL) {
-    try{
-      location.href = `${RETURN_URL}#alchemist_results=${encodeURIComponent(packB64(payload))}`;
-      ok = true;
-    }catch(e){}
+// Build 4-choice mapping for each question
+function buildOptionMap(q){
+  const correctDir = normDir(q.Correct_Direction);
+  const correctAns = (q.Correct_Answer || "").trim() || "—";
+  const d1 = (q.Distractor_1 || "").trim();
+  const d2 = (q.Distractor_2 || "").trim();
+  const d3 = (q.Distractor_3 || "").trim();
+  const distractors = [d1, d2, d3].filter(Boolean);
+  const map = {};
+  map[correctDir] = correctAns;
+  const remaining = ALL_DIRS.filter(d => d !== correctDir);
+  for (let i = 0; i < remaining.length; i++){
+    map[remaining[i]] = distractors[i] || "—";
   }
-  return ok;
+  return map;
 }
 
-/* =========================
-   DATA MODEL (set after injection)
-========================= */
-let RAW_DATA = [];
-let idx = 0;
-let xp = 0;
-let correctCount = 0;
-let answered = [];
-let injected = false;
+// Rebuild internal RAW_DATA structure from INJECTED_DATA
+function rebuildFromInjected(){
+  RAW_DATA = (INJECTED_DATA || []).map((q, idx) => ({
+    id: q.Question_ID || String(idx + 1).padStart(3, "0"),
+    set: q.Set_Code || "SET",
+    domain: q.Domain || "DOMAIN",
+    subdomain: q.Subdomain || "",
+    difficulty: Number(q.Difficulty || 3),
+    text: q.Question_Text || "Untitled question",
+    correctDir: normDir(q.Correct_Direction),
+    optionMap: buildOptionMap(q),
+    expShort: q.Explanation_Short || "",
+    expLong: q.Explanation_Long || ""
+  }));
+}
 
+// Initialize RAW_DATA from INJECTED_DATA
+let RAW_DATA = [];
+rebuildFromInjected();
+
+// UI element references
 const els = {
   stack: document.getElementById("stack"),
   progress: document.getElementById("progress-bar"),
@@ -269,8 +281,15 @@ const els = {
   log1: document.getElementById("log-1"),
   log2: document.getElementById("log-2"),
   log3: document.getElementById("log-3"),
+  gyro: document.getElementById("gyro-status"),
 };
 
+let idx = 0;
+let xp = 0;
+let correctCount = 0;
+let answered = [];
+
+// Log utility
 function setLog(primary, secondary, tertiary, mode="active"){
   if (els.log1) els.log1.textContent = primary || "> ...";
   if (els.log2) els.log2.textContent = secondary || "> ...";
@@ -279,6 +298,7 @@ function setLog(primary, secondary, tertiary, mode="active"){
   els.log2.className = "log-line";
   els.log3.className = "log-line " + (mode === "danger" ? "danger" : (mode === "primary" ? "primary" : "active"));
 }
+
 function updateHeader(){
   const total = RAW_DATA.length;
   const pct = total ? Math.round((idx / total) * 100) : 0;
@@ -302,28 +322,9 @@ function swipeTransform(dir){
     default: return "translate(0px,-720px)";
   }
 }
-
-function buildOptionMap(q){
-  const correctDir = normDir(q.Correct_Direction);
-  const correctAns = (q.Correct_Answer || "").trim() || "—";
-  const d1 = (q.Distractor_1 || "").trim();
-  const d2 = (q.Distractor_2 || "").trim();
-  const d3 = (q.Distractor_3 || "").trim();
-  const distractors = [d1, d2, d3].filter(Boolean);
-
-  const map = {};
-  map[correctDir] = correctAns;
-
-  const remaining = ALL_DIRS.filter(d => d !== correctDir);
-  for (let i = 0; i < remaining.length; i++){
-    map[remaining[i]] = distractors[i] || "—";
-  }
-  return map;
-}
-
+// Attach swipe interactions to a card
 function attachSwipe(card, label, q){
   let sx=0, sy=0, dragging=false;
-
   card.addEventListener("touchstart", (e) => {
     if (!e.touches || e.touches.length !== 1) return;
     dragging = true;
@@ -331,14 +332,11 @@ function attachSwipe(card, label, q){
     sy = e.touches[0].clientY;
     card.style.transition = "none";
   }, {passive:true});
-
   card.addEventListener("touchmove", (e) => {
     if (!dragging || !e.touches || e.touches.length !== 1) return;
     const dx = e.touches[0].clientX - sx;
     const dy = e.touches[0].clientY - sy;
-
     card.style.transform = `translate(${dx*0.9}px, ${dy*0.9}px) rotateY(${dx/18}deg) rotateX(${-dy/22}deg)`;
-
     const dir = dominantDir(dx, dy);
     if (dir) {
       const optText = (q.optionMap && q.optionMap[dir]) ? q.optionMap[dir] : dir;
@@ -348,15 +346,12 @@ function attachSwipe(card, label, q){
       label.classList.remove("show");
     }
   }, {passive:true});
-
   card.addEventListener("touchend", (e) => {
     if (!dragging) return;
     dragging = false;
-
     const t = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0] : null;
     const dx = t ? (t.clientX - sx) : 0;
     const dy = t ? (t.clientY - sy) : 0;
-
     const dir = dominantDir(dx, dy, 65);
     if (!dir) {
       card.style.transition = "transform 0.18s ease";
@@ -368,18 +363,16 @@ function attachSwipe(card, label, q){
   }, {passive:true});
 }
 
+// Create card element for a question
 function makeCard(q, zIndex){
   const card = document.createElement("div");
   card.className = "card";
   card.style.zIndex = String(zIndex);
-
   const label = document.createElement("div");
   label.className = "swipe-label";
-
   const qWrap = document.createElement("div");
   qWrap.className = "card-q";
   qWrap.innerHTML = escapeHTML(q.text);
-
   const chipRow = document.createElement("div");
   chipRow.className = "chiprow";
   chipRow.innerHTML = `
@@ -388,52 +381,45 @@ function makeCard(q, zIndex){
     <span class="chip">D:${escapeHTML(String(q.difficulty))}</span>
     <span class="chip">#${escapeHTML(q.id)}</span>
   `;
-
   const hint = document.createElement("div");
   hint.className = "small";
   hint.innerHTML = `<div class="muted">Swipe or tap an option</div>`;
-
   const btnRow = document.createElement("div");
   btnRow.className = "btnrow";
-
   const btnDefs = [
     { dir:"UP",    cls:"btn btn-gold" },
     { dir:"RIGHT", cls:"btn btn-green" },
     { dir:"LEFT",  cls:"btn btn-red" },
     { dir:"DOWN",  cls:"btn" }
   ];
-
   btnDefs.forEach(def => {
     const b = document.createElement("button");
     b.className = def.cls;
+    b.setAttribute("data-dir", def.dir);
     b.title = def.dir;
     b.textContent = q.optionMap[def.dir] || "—";
     b.addEventListener("click", () => answer(def.dir));
     btnRow.appendChild(b);
   });
-
   card.appendChild(label);
   card.appendChild(qWrap);
   card.appendChild(chipRow);
   card.appendChild(hint);
   card.appendChild(btnRow);
-
   attachSwipe(card, label, q);
   return card;
 }
 
+// Render function for stack
 function render(){
   els.stack.innerHTML = "";
   updateHeader();
-
   if (idx >= RAW_DATA.length) {
     renderResults();
     return;
   }
-
   const curr = RAW_DATA[idx];
   const next = RAW_DATA[idx + 1];
-
   if (next) {
     const c2 = makeCard(next, 1);
     c2.classList.add("locked");
@@ -441,19 +427,17 @@ function render(){
   }
   const c1 = makeCard(curr, 2);
   els.stack.appendChild(c1);
-
   const correctText = curr.optionMap[curr.correctDir] || curr.correctDir;
   setLog("> SYSTEM LIVE", `> QUESTIONS: ${RAW_DATA.length}`, `> ACTIVE: #${curr.id} (TARGET: ${correctText})`, "primary");
 }
 
+// Answer handling
 function answer(chosenDir){
   if (idx >= RAW_DATA.length) return;
-
   const q = RAW_DATA[idx];
   const correct = chosenDir === q.correctDir;
   const chosenText = q.optionMap[chosenDir] || "—";
   const correctText = q.optionMap[q.correctDir] || "—";
-
   answered.push({
     id: q.id,
     chosenDir,
@@ -468,7 +452,6 @@ function answer(chosenDir){
     expShort: q.expShort,
     expLong: q.expLong,
   });
-
   if (correct) {
     xp += 10;
     correctCount += 1;
@@ -478,46 +461,47 @@ function answer(chosenDir){
     setLog("> COLLISION", `> +2 XP`, `> WRONG: ${chosenText} • EXPECTED: ${correctText}`, "danger");
   }
   updateHeader();
-
   const topCard = els.stack.querySelector(".card:not(.locked)");
   if (topCard) {
     topCard.style.transition = "transform 0.22s ease, opacity 0.22s ease";
     topCard.style.transform = swipeTransform(chosenDir);
     topCard.style.opacity = "0";
   }
-
   setTimeout(() => { idx += 1; render(); }, 230);
 }
 
-function resultsPayload(){
+// Send results back to parent via postMessage
+function sendResultsToParent(){
   const total = RAW_DATA.length;
   const accuracy = total ? Math.round((correctCount/total)*100) : 0;
-  return {
-    version: "B1",
-    accuracy,
-    xp,
-    correctCount,
+  const results = {
     total,
-    finishedAt: new Date().toISOString(),
-    answered
+    correct: correctCount,
+    xp,
+    accuracy,
+    timestamp: Date.now(),
+    project: RECEIVED_SESSION?.project || ""
   };
+  try{
+    if (window.opener && !window.opener.closed) {
+      window.opener.postMessage({ type:"ALCHEMIST_RESULTS", results }, PARENT_ORIGIN);
+    }
+  }catch(e){}
+  // Also persist to localStorage for fallback (same domain only)
+  try{
+    localStorage.setItem("ALCHEMIST_RESULTS", JSON.stringify(results));
+  }catch(e){}
 }
 
+// Render results and show options
 function renderResults(){
   const total = RAW_DATA.length;
   const pct = total ? Math.round((correctCount/total)*100) : 0;
   if (els.progress) els.progress.style.width = "100%";
-
-  // send results back
-  const payload = resultsPayload();
-  const ok = deliverToParent("ALCHEMIST_RESULTS", payload);
-
-  setLog("> RUN COMPLETE", `> SCORE: ${correctCount}/${total} (${pct}%)`, ok ? "> RESULTS SENT" : "> SEND FAILED", ok ? "primary" : "danger");
-
+  setLog("> RUN COMPLETE", `> SCORE: ${correctCount}/${total} (${pct}%)`, `> EXPORT AVAILABLE`, "primary");
   const card = document.createElement("div");
   card.className = "card";
   card.style.zIndex = "5";
-
   card.innerHTML = `
     <div class="card-q" style="flex:0; min-height:auto; overflow:visible; font-family:var(--font-code); font-size:1.05rem; color:#ddd;">
       QUIZ COMPLETE
@@ -526,25 +510,25 @@ function renderResults(){
       <div style="height:8px"></div>
       <div class="small">ACCURACY: ${pct}% • XP: ${xp}</div>
       <div style="height:18px"></div>
-
       <div class="btnrow" style="grid-template-columns:1fr; gap:10px;">
         <button class="btn btn-gold" id="btn-pdf">EXPORT PDF</button>
         <button class="btn btn-green" id="btn-retry">RETRY</button>
         <button class="btn" id="btn-close">CLOSE</button>
       </div>
       <div style="height:14px"></div>
-      <div class="small muted">${ok ? "Results delivered to parent." : "If blocked, redirect fallback will be used if RETURN_URL exists."}</div>
+      <div class="small muted">This quiz was launched from Decision OS injection.</div>
     </div>
   `;
-
   els.stack.innerHTML = "";
   els.stack.appendChild(card);
-
   document.getElementById("btn-pdf").onclick = exportPDF;
   document.getElementById("btn-retry").onclick = () => { idx = 0; xp = 0; correctCount = 0; answered = []; render(); };
   document.getElementById("btn-close").onclick = () => window.close();
+  // Send results back to parent
+  sendResultsToParent();
 }
 
+// Export quiz report as PDF (same as before)
 async function exportPDF(){
   try{
     const { jsPDF } = window.jspdf;
@@ -552,108 +536,85 @@ async function exportPDF(){
     const w = doc.internal.pageSize.getWidth();
     const h = doc.internal.pageSize.getHeight();
     const margin = 40;
-
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
     doc.text("Alchemist Quiz Report", margin, 60);
-
     doc.setFont("helvetica", "normal");
     doc.setFontSize(11);
     doc.text(`Total: ${RAW_DATA.length} | Correct: ${correctCount} | XP: ${xp}`, margin, 86);
     doc.text(`Generated: ${new Date().toLocaleString()}`, margin, 104);
-
     let y = 140;
     const lineH = 14;
-
     answered.forEach((a, i) => {
       if (y > h - 120) { doc.addPage(); y = 60; }
-
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
-      doc.text(`${i+1}. ${String(a.text||"").replace(/\s+/g," ").slice(0, 120)}`, margin, y); y += lineH;
-
+      doc.text(`${i+1}. ${truncate(a.text, 90)}`, margin, y); y += lineH;
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
       doc.text(`Chosen: ${a.chosenText} (${a.chosenDir})`, margin, y); y += lineH;
       doc.text(`Expected: ${a.correctText} (${a.correctDir}) | ${a.isCorrect ? "CORRECT" : "WRONG"}`, margin, y); y += lineH;
-
       if (a.expShort) {
         const lines = doc.splitTextToSize(`Note: ${a.expShort}`, w - margin*2);
         lines.forEach(L => { doc.text(L, margin, y); y += lineH; });
       }
       y += 10;
     });
-
     doc.save(`alchemist-quiz-${new Date().toISOString().slice(0,10)}.pdf`);
+    setLog("> EXPORT COMPLETE", "> PDF SAVED", "> READY", "primary");
   }catch(e){
     console.error(e);
+    setLog("> EXPORT FAILED", "> PDF ERROR", "> CHECK CONSOLE", "danger");
   }
 }
 
-/* =========================
-   INJECTION HANDLER (REQUIRED FOR PATH B)
-========================= */
-function applyInjectedData(injectedArr){
-  const arr = Array.isArray(injectedArr) ? injectedArr : [];
-  if (!arr.length) return false;
-
-  RAW_DATA = arr.map((q, i) => ({
-    id: q.Question_ID || String(i + 1).padStart(3, "0"),
-    domain: q.Domain || "DOMAIN",
-    subdomain: q.Subdomain || "",
-    difficulty: Number(q.Difficulty || 3),
-    text: q.Question_Text || "Untitled question",
-    correctDir: normDir(q.Correct_Direction),
-    optionMap: buildOptionMap(q),
-    expShort: q.Explanation_Short || "",
-    expLong: q.Explanation_Long || ""
-  }));
-
-  idx = 0; xp = 0; correctCount = 0; answered = [];
-  injected = true;
-
-  setLog("> INJECTION OK", `> ITEMS: ${RAW_DATA.length}`, "> STARTING QUIZ", "primary");
-  updateHeader();
-  render();
-  return true;
+function truncate(s, n){
+  const t = String(s||"").replace(/\s+/g," ").trim();
+  return (t.length <= n) ? t : (t.slice(0, n-1) + "…");
 }
 
-window.addEventListener("message", (event) => {
-  // strict origin check
-  if (PARENT_ORIGIN !== "*" && event.origin !== PARENT_ORIGIN) return;
+// Announce ready to parent for handshake
+(function announceReady(){
+  try{
+    if (window.opener && !window.opener.closed) {
+      window.opener.postMessage({ type:"ALCHEMIST_READY", t:Date.now() }, PARENT_ORIGIN);
+    }
+  }catch(e){}
+})();
 
-  if (event.data?.type === "ALCHEMIST_INJECT") {
-    const ok = applyInjectedData(event.data.payload);
-    deliverToParent("ALCHEMIST_ACK", { ok, received: Array.isArray(event.data.payload) ? event.data.payload.length : 0 });
+// Message listener for injection and pings
+window.addEventListener("message", (ev) => {
+  if (ev.origin !== PARENT_ORIGIN) return;
+  const msg = ev.data || {};
+  if (msg.type === "ALCHEMIST_PING") {
+    // Re-announce ready
+    try{
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage({ type:"ALCHEMIST_READY", t:Date.now() }, PARENT_ORIGIN);
+      }
+    }catch(e){}
+    return;
+  }
+  if (msg.type === "ALCHEMIST_INJECT" && msg.quiz) {
+    INJECTED_DATA = Array.isArray(msg.quiz) ? msg.quiz : [];
+    RECEIVED_SESSION = msg.session || null;
+    rebuildFromInjected();
+    idx = 0; xp = 0; correctCount = 0; answered = [];
+    setLog("> INJECTION RECEIVED", `> ITEMS: ${INJECTED_DATA.length}`, "> STARTING...", "primary");
+    updateHeader();
+    render();
+    return;
   }
 });
 
-// demo fallback if no injection happens
-setTimeout(() => {
-  if (injected) return;
-  const DEMO = [{
-    Question_ID:"DEMO_001",
-    Set_Code:"DEMO",
-    Domain:"Decision OS",
-    Subdomain:"Onboarding",
-    Difficulty:"1",
-    Question_Text:"DEMO MODE — No payload received from parent.\n\nFix: parent must postMessage({type:'ALCHEMIST_INJECT', payload:[...]})",
-    Correct_Answer:"OK",
-    Distractor_1:"—",
-    Distractor_2:"—",
-    Distractor_3:"—",
-    Correct_Direction:"UP",
-    Explanation_Short:"No injection arrived.",
-    Explanation_Long:"Check parent opener, origins, and popup permissions."
-  }];
-  applyInjectedData(DEMO);
-}, 1500);
-
-// boot UI
-(function boot(){
-  setLog("> SYSTEM BOOT", `> PARENT: ${PARENT_ORIGIN}`, "> WAITING FOR INJECTION…", "active");
+// Boot the quiz UI
+function boot(){
+  els.gyro.classList.add("active");
+  setLog("> SYSTEM BOOT", `> INJECTED: ${INJECTED_DATA.length} ITEMS`, "> STARTING QUIZ...", "active");
   updateHeader();
-})();
+  render();
+}
+boot();
 </script>
 </body>
 </html>

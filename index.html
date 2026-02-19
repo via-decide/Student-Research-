@@ -42,12 +42,7 @@
       ``alchemist.html`` is deployed at the project root, it points to
       ``https://student-research.pages.dev/alchemist.html``. If you host
       Alchemist on a separate Pages project, update this constant accordingly.
-    * ``PARENT_ORIGIN`` — the origin of the parent application. This value is
-      used by the child quiz for postMessage origin checks. It should match
-      your deployed site (e.g. ``https://student-research.pages.dev``).
-
-    These variables ensure that ``launchAlchemistQuiz()`` opens the correct
-    destination and that the child quiz can validate messages.
+    * ``QUIZ_ORIGIN`` — derived from ``QUIZ_URL``. Used for cross-origin message checks.
   -->
 
   <style>
@@ -474,18 +469,16 @@
 <script>
 /* =========================================
    DECISION RESEARCH ENGINE + UPGRADES v1.2
-   + ALCHEMIST QUIZ INTEGRATION v1.1
+   + ALCHEMIST QUIZ INTEGRATION v1.1 (Cross-Origin)
    + XP SYNC + SYNTHESIS SCORE (PATCHED)
 ========================================= */
 
 /* ====== CONFIGURATION FOR ALCHEMIST (PATH B) ====== */
-// ``QUIZ_URL`` defines the full URL for the Alchemist quiz file. It
-// defaults to the Pages project root. Update this constant if you
-// deploy the quiz to another domain.
+// ``QUIZ_URL`` defines the full URL for the Alchemist quiz file. Update this
+// constant if your quiz is hosted on a different domain.
 const QUIZ_URL = "https://student-research.pages.dev/alchemist.html";
-// ``PARENT_ORIGIN`` is used by the child quiz to validate postMessage
-// communications. It must match your site's origin exactly.
-const PARENT_ORIGIN = "https://student-research.pages.dev";
+// ``QUIZ_ORIGIN`` is derived from QUIZ_URL and used for message validation.
+const QUIZ_ORIGIN = new URL(QUIZ_URL).origin;
 
 /* ====== ALCHEMIST INJECTION KEY ====== */
 const ALCHEMIST_LS_KEY = "ALCHEMIST_INJECTED_DATA";
@@ -574,7 +567,7 @@ let ENGINE_STATE = {
   research_nodes: [],
   synthesis: null,
 
-  // PATCH STEP 1
+  // PATCH: store quiz stats and synthesis score
   quizStats: null,
   synthesisScore: null
 };
@@ -584,39 +577,58 @@ let currentIdx = 0;
 let currentDecisionContext = null;
 
 /* =========================================
-PATCH STEP 2 — XP Sync Watcher
+Cross-Origin Quiz Sync (Handshake and Messaging)
+========================================= */
+// Variables to manage the cross-origin quiz window and handshake
+let QUIZ_WIN = null;
+let QUIZ_HANDSHAKE_OK = false;
+let QUIZ_LAST_PAYLOAD = null;
+
+// Build a session bundle containing current research data (nodes, synthesis, notes)
+function buildAlchemistSessionBundle(){
+  const nodes = ENGINE_STATE?.research_nodes || [];
+  const synthesis = ENGINE_STATE?.synthesis || null;
+  const notes = (document.getElementById("notes-text")?.value ?? localStorage.getItem(NOTES_KEY) ?? "");
+  const project = CURRENT_PROJECT?.name || "";
+  return {
+    type: "ALCHEMIST_SESSION",
+    version: 1,
+    createdAt: Date.now(),
+    origin: location.origin,
+    project,
+    nodes,
+    synthesis,
+    notes
+  };
+}
+
+/* =========================================
+PATCH: XP Sync Watcher (localStorage fallback)
 ========================================= */
 function checkAlchemistResults(){
   const raw = localStorage.getItem("ALCHEMIST_RESULTS");
   if(!raw) return;
-
   try{
     const data = JSON.parse(raw);
     localStorage.removeItem("ALCHEMIST_RESULTS");
-
     ENGINE_STATE.quizStats = data;
-
     showToast(`QUIZ: ${data.accuracy}% • +${data.xp} XP`);
-
     scoreSynthesis();
     autosaveProjectIfPossible();
     updateUIPanel();
-
   }catch(e){}
 }
+setInterval(checkAlchemistResults, 1500);
 
 /* =========================================
-PATCH STEP 3 — Synthesis Scoring Logic
+PATCH: Synthesis Scoring Logic
 ========================================= */
 function scoreSynthesis(){
   const quiz = ENGINE_STATE.quizStats;
   if(!quiz) return;
-
   let baseScore = Number(quiz.accuracy || 0);
-
   if((ENGINE_STATE.research_nodes || []).length > 4) baseScore += 5;
   if((ENGINE_STATE.synthesis?.topTakeaways || []).length >= 4) baseScore += 5;
-
   ENGINE_STATE.synthesisScore = Math.min(100, baseScore);
 }
 
@@ -637,7 +649,9 @@ function openWikipedia(title){
   window.open(`https://en.wikipedia.org/wiki/Special:Search?search=${q}`, "_blank");
 }
 
-/* ---------- Quick Panel ---------- */
+/* =========================================
+Quick Panel and Notes Management
+========================================= */
 function isUIPanelOpen(){
   const p = document.getElementById('ui-panel');
   return !!(p && p.classList.contains('open'));
@@ -691,19 +705,15 @@ function updateUIPanel(){
   const timeEl = document.getElementById('panel-time');
   const hintEl = document.getElementById('panel-toast-hint');
   const projEl = document.getElementById('panel-project');
-
   const domain = (ENGINE_STATE?.cuisines_detected?.[0]) ? ENGINE_STATE.cuisines_detected[0] : "home";
   const nodes = Array.isArray(ENGINE_STATE?.research_nodes) ? ENGINE_STATE.research_nodes.length : 0;
   const activeSrc = (WIKI_ENGINE?.sources && WIKI_ENGINE?.activeSource) ? (WIKI_ENGINE.sources[WIKI_ENGINE.activeSource]?.name || "-") : "-";
   const lastNode = (nodes > 0) ? (ENGINE_STATE.research_nodes[nodes - 1]?.title || "-") : "-";
-
   if (domainEl) domainEl.textContent = String(domain).toUpperCase();
   if (slideEl) slideEl.textContent = (typeof currentIdx === 'number' ? `${currentIdx + 1}/${(slideElements?.length || 1)}` : "-");
   if (nodesEl) nodesEl.textContent = String(nodes);
   if (srcEl) srcEl.textContent = activeSrc ? String(activeSrc).toUpperCase() : "-";
   if (lastEl) lastEl.textContent = String(lastNode);
-
-  // PATCH STEP 3 — badge logic
   if (badgeEl){
     if(ENGINE_STATE.synthesisScore){
       badgeEl.textContent = `SCORE ${ENGINE_STATE.synthesisScore}`;
@@ -713,7 +723,6 @@ function updateUIPanel(){
         : String(domain).toUpperCase();
     }
   }
-
   if (timeEl) timeEl.textContent = nowIST();
   if (hintEl) hintEl.textContent = isUIPanelOpen() ? "Tap outside to close" : "Ready";
   if (projEl) projEl.textContent = CURRENT_PROJECT?.name ? CURRENT_PROJECT.name.toUpperCase() : "-";
@@ -761,10 +770,8 @@ function loadNotes(){
     if (!ta) return;
     const saved = localStorage.getItem(NOTES_KEY);
     if (saved !== null) ta.value = saved;
-
     const badge = document.getElementById('notes-badge');
     if (badge) badge.textContent = saved && saved.trim() ? "RESTORED" : "LOCAL";
-
     const savedEl = document.getElementById('notes-saved');
     if (savedEl) savedEl.textContent = saved && saved.trim() ? "Restored" : "Not saved";
   }catch(e){ console.error(e); }
@@ -810,18 +817,14 @@ setInterval(() => {
   updateNotesMeta();
 }, 1200);
 
-// PATCH STEP 2 interval
-setInterval(checkAlchemistResults, 1500);
-
 /* =========================================
 ALCHEMIST QUIZ INTEGRATION (UPGRADED 4-DIR)
-PATCH STEP 4: Replace builder (already upgraded)
+PATCH: replace builder with improved mapping
 ========================================= */
 function buildAlchemistPayloadFromResearch(nodes, { maxQ = 12 } = {}) {
   const list = Array.isArray(nodes) ? nodes.slice(0, maxQ) : [];
   const out = [];
   const now = Date.now();
-
   function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
@@ -830,7 +833,6 @@ function buildAlchemistPayloadFromResearch(nodes, { maxQ = 12 } = {}) {
     }
     return a;
   }
-
   function pickNDistractors(allTitles, correctTitle, n = 3) {
     const pool = allTitles.filter(t => t && t !== correctTitle);
     const s = shuffle(pool);
@@ -838,37 +840,28 @@ function buildAlchemistPayloadFromResearch(nodes, { maxQ = 12 } = {}) {
     while (picked.length < n) picked.push("—");
     return picked;
   }
-
   const titles = list
     .map(n => normalizeText(n?.title || ""))
     .filter(Boolean);
-
   const DIRECTIONS = ["UP", "RIGHT", "LEFT", "DOWN"];
-
   list.forEach((n, i) => {
     const title = normalizeText(n?.title || `Node ${i + 1}`);
     const sents = splitIntoSentences(n?.summary || "");
     const snippet =
       sents[0] ||
       (n?.summary ? normalizeText(n.summary).slice(0, 180) : "");
-
     const prompt = snippet
       ? `Which node best matches this summary snippet?\n\n“${snippet}”`
       : "Which node is this?";
-
     const [d1, d2, d3] = pickNDistractors(titles, title, 3);
-
     const dirOrder = shuffle(DIRECTIONS);
-
     const optionByDir = {};
     optionByDir[dirOrder[0]] = title;
     optionByDir[dirOrder[1]] = d1;
     optionByDir[dirOrder[2]] = d2;
     optionByDir[dirOrder[3]] = d3;
-
     const correctDir =
       Object.keys(optionByDir).find(k => optionByDir[k] === title) || "UP";
-
     out.push({
       Question_ID: `R_${now}_${String(i + 1).padStart(3, "0")}`,
       Set_Code: "RESEARCH",
@@ -878,46 +871,66 @@ function buildAlchemistPayloadFromResearch(nodes, { maxQ = 12 } = {}) {
         Math.min(5, Math.max(1, Math.round((wordCount(n?.summary || "") / 120) || 2)))
       ),
       Question_Text: prompt,
-
       Correct_Answer: title,
       Distractor_1: d1,
       Distractor_2: d2,
       Distractor_3: d3,
       Correct_Direction: correctDir,
-
       Option_UP: optionByDir.UP,
       Option_RIGHT: optionByDir.RIGHT,
       Option_LEFT: optionByDir.LEFT,
       Option_DOWN: optionByDir.DOWN,
-
       Explanation_Short: "Pick the node title that matches the summary snippet.",
       Explanation_Long: (n?.url ? `Source: ${n.url}` : "Source: (none)")
     });
   });
-
   return out;
 }
 
-// Modified launcher: uses the configured QUIZ_URL instead of a relative path.
+// Modified launcher: uses cross-origin handshake to send session & questions
 function launchAlchemistQuiz(){
   const nodes = ENGINE_STATE?.research_nodes || [];
   if (!nodes.length) return showToast("NO NODES FOR QUIZ");
   try{
-    const payload = buildAlchemistPayloadFromResearch(nodes, { maxQ: 12 });
-    localStorage.setItem(ALCHEMIST_LS_KEY, JSON.stringify(payload));
-    showToast("QUIZ READY");
-    // Always open the configured quiz URL; this prevents broken links
-    // when ``alchemist.html`` is not served from the current directory.
-    window.open(QUIZ_URL, "_blank");
+    const quizPayload = buildAlchemistPayloadFromResearch(nodes, { maxQ: 12 });
+    const sessionBundle = buildAlchemistSessionBundle();
+    QUIZ_LAST_PAYLOAD = {
+      type: "ALCHEMIST_INJECT",
+      version: 1,
+      quiz: quizPayload,
+      session: sessionBundle
+    };
+    QUIZ_HANDSHAKE_OK = false;
+    // Open or focus the quiz window
+    QUIZ_WIN = window.open(QUIZ_URL, "_blank");
+    if (!QUIZ_WIN) return showToast("POPUP BLOCKED");
+    showToast("OPENING ALCHEMIST...");
+    let tries = 0;
+    const tick = setInterval(() => {
+      tries++;
+      if (!QUIZ_WIN || QUIZ_WIN.closed) { clearInterval(tick); return; }
+      if (QUIZ_HANDSHAKE_OK) {
+        QUIZ_WIN.postMessage(QUIZ_LAST_PAYLOAD, QUIZ_ORIGIN);
+        clearInterval(tick);
+        showToast("SESSION SENT");
+        return;
+      }
+      // Ping the child window to prompt handshake
+      QUIZ_WIN.postMessage({ type:"ALCHEMIST_PING", t:Date.now() }, QUIZ_ORIGIN);
+      if (tries > 16) {
+        clearInterval(tick);
+        try{ QUIZ_WIN.postMessage(QUIZ_LAST_PAYLOAD, QUIZ_ORIGIN); }catch(e){}
+        showToast("SENT (NO ACK)");
+      }
+    }, 500);
   }catch(e){
     console.error(e);
     showToast("QUIZ FAILED");
   }
 }
 
-// New: Simple redirect to Alchemist app
+// Optional: direct link to alchemist app (bypassing injection)
 function redirectToAlchemistApp(){
-  // Use configured QUIZ_URL to open in new tab
   window.open(QUIZ_URL, "_blank");
 }
 
@@ -929,7 +942,7 @@ const WIKI_ENGINE = {
   cache: new Map(),
   sources: {
     wiki: { name: "WIKIPEDIA", api: "https://en.wikipedia.org/w/api.php", icon: "📚", description: "General knowledge encyclopedia" },
-    travel: { name: "WIKIVOYAGE", api: "https://en.wikivoyage.org/w/api.php", icon: "🗺️", description: "Travel guides and destinations" },
+    travel: { name: "WIKIVoyage", api: "https://en.wikivoyage.org/w/api.php", icon: "🗺️", description: "Travel guides and destinations" },
     wikibooks: { name: "WIKIBOOKS", api: "https://en.wikibooks.org/w/api.php", icon: "📖", description: "Educational textbooks" },
     wikinews: { name: "WIKINEWS", api: "https://en.wikinews.org/w/api.php", icon: "📰", description: "News articles" }
   },
@@ -970,7 +983,6 @@ const WIKI_ENGINE = {
       const firstKey = Object.keys(pages)[0];
       if (!firstKey || firstKey === "-1") throw new Error("Page not found");
       const page = pages[firstKey];
-
       const linksUrl = `${api}?origin=*&action=query&prop=links&titles=${encodeURIComponent(t)}&pllimit=20&plnamespace=0&format=json`;
       let links = [];
       try {
@@ -979,7 +991,6 @@ const WIKI_ENGINE = {
         const lk = Object.keys(lp)[0];
         links = (lk && lp[lk] && lp[lk].links) ? lp[lk].links.map(l => ({ name: l.title, ns: l.ns })) : [];
       } catch(e) { links = []; }
-
       const context = {
         title: page.title,
         summary: page.extract || "No summary available.",
@@ -1054,7 +1065,6 @@ function shareCurrentProject(){
   if (!p) return showToast("NOTHING TO SHARE");
   saveProjectToStorage(p);
   CURRENT_PROJECT = p;
-
   const payload = serializeProjectForShare(p);
   const url = `${location.origin}${location.pathname}#p=${payload}`;
   if (navigator.clipboard?.writeText) {
@@ -1104,7 +1114,6 @@ function buildProjectFromCurrentState(){
   const syn = ENGINE_STATE?.synthesis || null;
   const notes = (document.getElementById("notes-text")?.value ?? localStorage.getItem(NOTES_KEY) ?? "");
   if (!nodes.length && !syn && !notes) return null;
-
   const project = {
     id: CURRENT_PROJECT?.id || uid(),
     name: CURRENT_PROJECT?.name || (nodes[0]?.decisionMeta?.decision ? `Decision: ${nodes[0].decisionMeta.decision}` : "Decision Research"),
@@ -1126,13 +1135,11 @@ function loadProjectIntoApp(project){
   localStorage.setItem(NOTES_KEY, notes);
   const ta = document.getElementById("notes-text");
   if (ta) ta.value = notes;
-
   ENGINE_STATE.cuisines_detected = ["research"];
   ENGINE_STATE.research_nodes = Array.isArray(project?.engineState?.research_nodes) ? project.engineState.research_nodes : [];
   ENGINE_STATE.synthesis = project?.engineState?.synthesis || null;
   ENGINE_STATE.quizStats = project?.engineState?.quizStats || null;
   ENGINE_STATE.synthesisScore = project?.engineState?.synthesisScore || null;
-
   if (ENGINE_STATE.research_nodes.length) {
     openStoredDeck(ENGINE_STATE.research_nodes, ENGINE_STATE.synthesis);
   } else {
@@ -1291,14 +1298,11 @@ function renderLanding(){
   container.innerHTML = "";
   slideElements = [];
   currentIdx = 0;
-
   const lastId = localStorage.getItem(LAST_PROJECT_KEY);
   const hasLast = !!(lastId && loadProjectFromStorage(lastId));
-
   const examplesHtml = DEFAULT_EXAMPLES.map(ex =>
     `<button class="cuisine-btn" onclick="openExample('${escapeHTML(ex.id)}')">${escapeHTML(ex.name)}</button>`
   ).join("");
-
   const section = document.createElement('section');
   section.className = "main-slide active";
   section.dataset.mode = "landing";
@@ -1310,7 +1314,6 @@ function renderLanding(){
     <div class="sub-slide static article-view">
       <h1>Decision Research</h1>
       <div class="primary-question">Start with examples, or open the tool and build your own research nodes.</div>
-
       <div class="context-panel">
         <div class="section-title" style="margin-top:0">How to use</div>
         <div style="color:#d6dde8; line-height:1.65;">
@@ -1322,36 +1325,30 @@ function renderLanding(){
           <p style="margin-bottom:0"><strong>Notes:</strong> Tap the notes icon (✎) → SAVE.</p>
         </div>
       </div>
-
       <div class="context-panel">
         <div class="section-title" style="margin-top:0">Try an example</div>
         <div style="display:grid; gap:12px;">${examplesHtml}</div>
       </div>
-
       <div class="final-actions">
         <button class="btn btn-full btn-pro" onclick="openTool()">OPEN TOOL</button>
         ${hasLast ? `<button class="btn btn-full" onclick="continueLastProject()">CONTINUE LAST PROJECT</button>` : `<button class="btn btn-full btn-muted" onclick="showToast('NO LAST PROJECT')">CONTINUE LAST PROJECT</button>`}
         <button class="btn btn-full" onclick="importShareLinkPrompt()">IMPORT SHARE LINK</button>
         <button class="btn btn-full btn-muted" onclick="openProjectPicker()">LOAD SAVED PROJECT</button>
       </div>
-
       <div class="nav-hint"><span>GitHub Pages mode</span><span>Tap ☰: panel</span></div>
     </div>
   `;
   container.appendChild(section);
   slideElements = [section];
   currentIdx = 0;
-
   ENGINE_STATE.cuisines_detected = ["home"];
   ENGINE_STATE.research_nodes = [];
   ENGINE_STATE.synthesis = null;
   ENGINE_STATE.quizStats = null;
   ENGINE_STATE.synthesisScore = null;
   CURRENT_PROJECT = null;
-
   updateUIPanel();
 }
-
 function openExample(exampleId){
   const ex = DEFAULT_EXAMPLES.find(x => x.id === exampleId);
   if (!ex) return showToast("EXAMPLE NOT FOUND");
@@ -1389,13 +1386,11 @@ const FALLBACK_MENU = {
   "research": { label: "DECISION RESEARCH", categories: [] }
 };
 let RAW_DATA = FALLBACK_MENU;
-
 function renderLobby() {
   const container = document.getElementById('master-container');
   container.innerHTML = "";
   const section = document.createElement('section');
   section.className = "main-slide active";
-
   let html = `
     <div class="slide-header">
       <span class="header-title">DECIDE OS</span>
@@ -1566,7 +1561,6 @@ function renderDecisionMetaSlide(ctx){
     <div class="sub-slide static article-view">
       <h1>Link this node</h1>
       <div class="primary-question">Capture the decision context that this research supports.</div>
-
       <div class="context-panel">
         <div class="section-title" style="margin-top:0">Decision context</div>
         <div style="display:grid; gap:10px;">
@@ -1577,7 +1571,6 @@ function renderDecisionMetaSlide(ctx){
           <div><input id="meta-options" type="text" placeholder="Option set (e.g. A/B/C)" style="width:100%; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;"></div>
         </div>
       </div>
-
       <div class="final-actions">
         <button class="btn btn-full btn-pro" onclick="saveDecisionMeta()">SAVE META</button>
         <button class="btn btn-full" onclick="skipDecisionMeta()">SKIP</button>
@@ -1619,9 +1612,7 @@ async function buildResearchDeckFromNetwork(seedNode){
   slideElements = [];
   currentIdx = 0;
   ENGINE_STATE.cuisines_detected = ["research"];
-
   renderNodeSlide(seedNode, true);
-
   if (seedNode.links && seedNode.links.length) {
     const linkNames = seedNode.links.slice(0, 6).map(l => l.name).filter(Boolean);
     for (const name of linkNames) {
@@ -1639,11 +1630,9 @@ function openStoredDeck(nodes, synthesis){
   container.innerHTML = "";
   slideElements = [];
   currentIdx = 0;
-
   ENGINE_STATE.cuisines_detected = ["research"];
   ENGINE_STATE.research_nodes = nodes || [];
   ENGINE_STATE.synthesis = synthesis || null;
-
   ENGINE_STATE.research_nodes.forEach((n, idx) => renderNodeSlide(n, idx === 0));
   renderEndSlide();
   goToSlide(0);
@@ -1656,25 +1645,21 @@ function renderNodeSlide(node, isFirst){
   const section = document.createElement('section');
   section.className = isFirst ? "main-slide active" : "main-slide next";
   section.dataset.mode = "node";
-
   const words = wordCount(node.summary || "");
   const rt = readingTimeMins(words);
   const takeaways = extractTakeaways(node.summary || "", 4);
   const cats = (node.categories || []).slice(0,5);
-
   section.innerHTML = `
     <div class="slide-header">
       <span class="header-title">NODE</span>
       <span class="header-badge">${escapeHTML((node.sourceName || 'LOCAL').toUpperCase())}</span>
     </div>
-
     <div class="sub-slide static article-view">
       <div class="context-panel">
         <div class="context-top">
           <div class="thumb">
             ${node.thumbnail ? `<img src="${escapeHTML(node.thumbnail)}" alt="">` : 'THUMB'}
           </div>
-
           <div class="context-title-wrap">
             <div class="context-kicker">Research node • Confidence: ${escapeHTML(node.confidence || 'High')}</div>
             <h1 style="margin-bottom:6px;">${escapeHTML(node.title || 'Untitled')}</h1>
@@ -1685,32 +1670,26 @@ function renderNodeSlide(node, isFirst){
             </div>
           </div>
         </div>
-
         <div class="wiki-meta">
           ${cats.map(c => `<span class="meta-chip">${escapeHTML(c)}</span>`).join("")}
         </div>
-
         <div class="section-title">Key takeaways</div>
         <div class="takeaways">
           <ul>${takeaways.map(t => `<li>${escapeHTML(t)}</li>`).join("")}</ul>
         </div>
-
         <div class="section-title">Summary</div>
         <div class="wiki-summary">${formatSummaryHTML(node.summary || "")}</div>
-
         <div class="final-actions" style="margin-top:12px;">
           <button class="btn btn-full btn-yt" onclick="openYouTubeSearch('${escapeHTML(node.title || "")}')">YOUTUBE</button>
           <button class="btn btn-full btn-pro" onclick="openWikipedia('${escapeHTML(node.title || "")}')">OPEN</button>
           <button class="btn btn-full btn-pdf" onclick="generateResearchPDF()">RESEARCH PDF</button>
         </div>
-
         <div class="final-actions" style="margin-top:10px;">
           <button class="btn btn-full btn-pro" onclick="launchAlchemistQuiz()">QUIZ (ALCHEMIST)</button>
           <button class="btn btn-full btn-pro" onclick="saveCurrentProjectPrompt()">SAVE PROJECT</button>
           <button class="btn btn-full" onclick="shareCurrentProject()">SHARE LINK</button>
         </div>
       </div>
-
       <div class="nav-hint"><span>Swipe up/down: slides</span><span>Tap ☰: panel</span></div>
     </div>
   `;
@@ -1745,7 +1724,6 @@ function openSynthesisSlide() {
   const allTakeaways = [];
   ENGINE_STATE.research_nodes.forEach(n => allTakeaways.push(...extractTakeaways(n.summary || "", 4)));
   const top = allTakeaways.slice(0, 5);
-
   const container = document.getElementById('master-container');
   const synSlide = document.createElement('section');
   synSlide.className = "main-slide next";
@@ -1758,32 +1736,26 @@ function openSynthesisSlide() {
         <div class="section-title">Working thesis</div>
         <textarea id="syn-thesis" style="width:100%; min-height:80px; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;">${escapeHTML(syn.thesis || '')}</textarea>
       </div>
-
       <div class="context-panel">
         <div class="section-title">Top takeaways</div>
         <textarea id="syn-top" style="width:100%; min-height:80px; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;">${escapeHTML((syn.topTakeaways || top).join('\n'))}</textarea>
       </div>
-
       <div class="context-panel">
         <div class="section-title">Contradictions / open questions</div>
         <textarea id="syn-contradictions" style="width:100%; min-height:60px; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;">${escapeHTML(syn.contradictions || '')}</textarea>
       </div>
-
       <div class="context-panel">
         <div class="section-title">Decision implications</div>
         <textarea id="syn-implications" style="width:100%; min-height:60px; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;">${escapeHTML(syn.implications || '')}</textarea>
       </div>
-
       <div class="context-panel">
         <div class="section-title">Next research nodes</div>
         <textarea id="syn-next" style="width:100%; min-height:60px; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;">${escapeHTML(syn.next || '')}</textarea>
       </div>
-
       <div class="context-panel">
         <div class="section-title">Recommendation signals</div>
         <textarea id="syn-rec" style="width:100%; min-height:60px; padding:10px; border-radius:8px; border:1px solid #2a3342; background:#0b0f14; color:#fff; font-size:0.9rem;">${escapeHTML(syn.recommendation || '')}</textarea>
       </div>
-
       <div class="final-actions">
         <button class="btn btn-full btn-pro" onclick="saveSynthesis()">SAVE</button>
         <button class="btn btn-full" onclick="closeSynthesisSlide()">CLOSE</button>
@@ -1830,7 +1802,6 @@ function renderEndSlide(){
     <div class="sub-slide static article-view">
       <h1>Export</h1>
       <div class="primary-question">Review synthesis, then export your journey.</div>
-
       <div class="context-panel">
         <div class="section-title" style="margin-top:0">What next?</div>
         <div style="color:#d6dde8; line-height:1.6;">
@@ -1838,7 +1809,6 @@ function renderEndSlide(){
           <p style="margin-bottom:0">Then export as either a classic Research PDF or a Decision Brief PDF.</p>
         </div>
       </div>
-
       <div class="final-actions">
         <button class="btn btn-full btn-pro" onclick="openSynthesisSlide()">SYNTHESIS</button>
         <button class="btn btn-full btn-pdf" onclick="generateResearchPDF()">RESEARCH PDF</button>
@@ -1847,7 +1817,6 @@ function renderEndSlide(){
         <button class="btn btn-full" onclick="renderSearchSlide()">NEW SEARCH</button>
         <button class="btn btn-full btn-muted" onclick="goHome()">← WELCOME</button>
       </div>
-
       <div class="nav-hint"><span>Swipe up/down: slides</span><span>Tap ☰: panel</span></div>
     </div>
   `;
@@ -1856,8 +1825,7 @@ function renderEndSlide(){
 }
 
 /* =========================================
-PDF: Classic Research PDF (PATCH STEP 5)
-Non-diluted: decision context + full summaries + synthesis + hierarchy
+PDF: Classic Research PDF
 ========================================= */
 function sanitizeForPDF(text){
   return normalizeText(text).replace(/[^\x00-\xFF]/g, "");
@@ -1866,9 +1834,7 @@ async function generateResearchPDF() {
   if (!ENGINE_STATE.research_nodes || ENGINE_STATE.research_nodes.length === 0) {
     return showToast("NO RESEARCH TO EXPORT");
   }
-
   showToast("GENERATING PDF...");
-
   try {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: "pt", format: "a4" });
@@ -1876,248 +1842,206 @@ async function generateResearchPDF() {
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 40;
     const contentWidth = pageWidth - margin * 2;
-
-    const firstNode = ENGINE_STATE.research_nodes[0];
-    const decisionMeta = firstNode?.decisionMeta || {};
-    const synthesis = ENGINE_STATE.synthesis || null;
-
-    let pageNum = 1;
-
-    function footer() {
-      doc.setFontSize(9);
-      doc.setTextColor(140);
-      doc.text(`decide.engine • Page ${pageNum}`, pageWidth / 2, pageHeight - 24, { align: "center" });
-      doc.setFontSize(8);
-      doc.text(
-        `Generated: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`,
-        margin,
-        pageHeight - 24
-      );
-    }
-
-    function ensureSpace(y, needed = 40){
-      if (y + needed <= pageHeight - 60) return y;
-      doc.addPage();
-      pageNum++;
-      return 60;
-    }
-
-    /* ===== Cover ===== */
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(28);
-    doc.setTextColor(255, 103, 31);
-    doc.text("Decision Research Brief", pageWidth / 2, 90, { align: "center" });
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(12);
-    doc.setTextColor(80);
-    doc.text(`${ENGINE_STATE.research_nodes.length} nodes`, pageWidth / 2, 114, { align: "center" });
-
-    let y = 160;
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.setTextColor(20);
-    doc.text("Decision Context", margin, y);
-    y += 18;
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(11);
-    const ctxLines = [
-      `Decision: ${decisionMeta.decision || "N/A"}`,
-      `Time horizon: ${decisionMeta.time || "N/A"}`,
-      `Stake: ${decisionMeta.stake || "N/A"}`,
-      `Success metric: ${decisionMeta.success || "N/A"}`,
-      `Options: ${decisionMeta.options || "N/A"}`
-    ];
-    ctxLines.forEach(line => {
-      const lines = doc.splitTextToSize(sanitizeForPDF(line), contentWidth);
-      lines.forEach(L => {
-        y = ensureSpace(y, 18);
-        doc.text(L, margin, y);
-        y += 14;
-      });
-    });
-
-    y += 18;
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.text("Index", margin, y);
-    y += 16;
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(11);
-    ENGINE_STATE.research_nodes.forEach((n, i) => {
-      const line = `${i + 1}. ${sanitizeForPDF(n.title || "Untitled")}`;
-      const lines = doc.splitTextToSize(line, contentWidth);
-      lines.forEach(L => {
-        y = ensureSpace(y, 18);
-        doc.text(L, margin, y);
-        y += 14;
-      });
-    });
-
-    footer();
-
-    /* ===== Nodes ===== */
-    ENGINE_STATE.research_nodes.forEach((node, index) => {
-      doc.addPage();
-      pageNum++;
-
-      let y2 = 70;
-
-      const title = sanitizeForPDF(node.title || "Untitled");
-      const src = sanitizeForPDF(node.sourceName || "Local");
-      const conf = sanitizeForPDF(node.confidence || "High");
-      const url = sanitizeForPDF(node.url || "");
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(18);
-      doc.setTextColor(255, 103, 31);
-      const tLines = doc.splitTextToSize(`${index + 1}. ${title}`, contentWidth);
-      doc.text(tLines, margin, y2);
-      y2 += tLines.length * 18;
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(110);
-      doc.text(`Source: ${src} • Confidence: ${conf}`, margin, y2);
-      y2 += 16;
-
-      if (url) {
-        const uLines = doc.splitTextToSize(`URL: ${url}`, contentWidth);
-        uLines.forEach(L => {
-          y2 = ensureSpace(y2, 18);
-          doc.text(L, margin, y2);
-          y2 += 12;
-        });
-        y2 += 6;
-      }
-
-      const takeaways = extractTakeaways(node.summary || "", 4).map(sanitizeForPDF);
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.setTextColor(20);
-      doc.text("Key takeaways", margin, y2);
-      y2 += 14;
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(11);
-      doc.setTextColor(40);
-
-      if (takeaways.length) {
-        takeaways.forEach(tw => {
-          const lines = doc.splitTextToSize(`• ${tw}`, contentWidth);
-          lines.forEach(L => {
-            y2 = ensureSpace(y2, 18);
-            doc.text(L, margin, y2);
-            y2 += 14;
-          });
-          y2 += 2;
-        });
-      } else {
-        y2 = ensureSpace(y2, 18);
-        doc.text("• (No takeaways extracted)", margin, y2);
-        y2 += 14;
-      }
-
-      y2 += 8;
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.setTextColor(20);
-      doc.text("Summary", margin, y2);
-      y2 += 14;
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(11);
-      doc.setTextColor(40);
-
-      const summary = sanitizeForPDF(node.summary || "");
-      const sLines = doc.splitTextToSize(summary || "No summary available.", contentWidth);
-      sLines.forEach(L => {
-        y2 = ensureSpace(y2, 18);
-        doc.text(L, margin, y2);
-        y2 += 14;
-      });
-
-      footer();
-    });
-
-    /* ===== Synthesis ===== */
-    if (synthesis && (synthesis.thesis || (synthesis.topTakeaways && synthesis.topTakeaways.length) || synthesis.implications || synthesis.next || synthesis.recommendation || synthesis.contradictions)) {
-      doc.addPage();
-      pageNum++;
-
-      let y3 = 70;
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(18);
-      doc.setTextColor(255, 103, 31);
-      doc.text("Synthesis", margin, y3);
-      y3 += 22;
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.setTextColor(20);
-
-      function block(title, text){
-        if (!text || !String(text).trim()) return;
-        y3 = ensureSpace(y3, 40);
-        doc.text(title, margin, y3);
-        y3 += 14;
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(11);
-        doc.setTextColor(40);
-        const lines = doc.splitTextToSize(sanitizeForPDF(String(text)), contentWidth);
-        lines.forEach(L => {
-          y3 = ensureSpace(y3, 18);
-          doc.text(L, margin, y3);
-          y3 += 14;
-        });
-        y3 += 10;
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(12);
-        doc.setTextColor(20);
-      }
-
-      block("Working thesis", synthesis.thesis);
-
-      if (Array.isArray(synthesis.topTakeaways) && synthesis.topTakeaways.length) {
-        y3 = ensureSpace(y3, 40);
-        doc.text("Top takeaways", margin, y3);
-        y3 += 14;
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(11);
-        doc.setTextColor(40);
-        synthesis.topTakeaways.forEach(tw => {
-          const lines = doc.splitTextToSize(`• ${sanitizeForPDF(tw)}`, contentWidth);
-          lines.forEach(L => {
-            y3 = ensureSpace(y3, 18);
-            doc.text(L, margin, y3);
-            y3 += 14;
-          });
-          y3 += 2;
-        });
-        y3 += 10;
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(12);
-        doc.setTextColor(20);
-      }
-
-      block("Contradictions / open questions", synthesis.contradictions);
-      block("Decision implications", synthesis.implications);
-      block("Next research nodes", synthesis.next);
-      block("Recommendation signals", synthesis.recommendation);
-
-      footer();
-    }
-
-    doc.save(`decision-research-${new Date().toISOString().slice(0,10)}.pdf`);
-    showToast("PDF DOWNLOADED");
-
+    const firstNode = ENGINE_STATE.research_nodes[0];  
+    const decisionMeta = firstNode?.decisionMeta || {};  
+    const synthesis = ENGINE_STATE.synthesis || null;  
+    let pageNum = 1;  
+    function footer() {  
+      doc.setFontSize(9);  
+      doc.setTextColor(140);  
+      doc.text(`decide.engine • Page ${pageNum}`, pageWidth / 2, pageHeight - 24, { align: "center" });  
+      doc.setFontSize(8);  
+      doc.text(  
+        `Generated: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`,  
+        margin,  
+        pageHeight - 24  
+      );  
+    }  
+    function ensureSpace(y, needed = 40){  
+      if (y + needed <= pageHeight - 60) return y;  
+      doc.addPage();  
+      pageNum++;  
+      return 60;  
+    }  
+    doc.setFont("helvetica", "bold");  
+    doc.setFontSize(28);  
+    doc.setTextColor(255, 103, 31);  
+    doc.text("Decision Research Brief", pageWidth / 2, 90, { align: "center" });  
+    doc.setFont("helvetica", "normal");  
+    doc.setFontSize(12);  
+    doc.setTextColor(80);  
+    doc.text(`${ENGINE_STATE.research_nodes.length} nodes`, pageWidth / 2, 114, { align: "center" });  
+    let y = 160;  
+    doc.setFont("helvetica", "bold");  
+    doc.setFontSize(14);  
+    doc.setTextColor(20);  
+    doc.text("Decision Context", margin, y);  
+    y += 18;  
+    doc.setFont("helvetica", "normal");  
+    doc.setFontSize(11);  
+    const ctxLines = [  
+      `Decision: ${decisionMeta.decision || "N/A"}`,  
+      `Time horizon: ${decisionMeta.time || "N/A"}`,  
+      `Stake: ${decisionMeta.stake || "N/A"}`,  
+      `Success metric: ${decisionMeta.success || "N/A"}`,  
+      `Options: ${decisionMeta.options || "N/A"}`  
+    ];  
+    ctxLines.forEach(line => {  
+      const lines = doc.splitTextToSize(sanitizeForPDF(line), contentWidth);  
+      lines.forEach(L => {  
+        y = ensureSpace(y, 18);  
+        doc.text(L, margin, y);  
+        y += 14;  
+      });  
+    });  
+    y += 18;  
+    doc.setFont("helvetica", "bold");  
+    doc.setFontSize(14);  
+    doc.text("Index", margin, y);  
+    y += 16;  
+    doc.setFont("helvetica", "normal");  
+    doc.setFontSize(11);  
+    ENGINE_STATE.research_nodes.forEach((n, i) => {  
+      const line = `${i + 1}. ${sanitizeForPDF(n.title || "Untitled")}`;  
+      const lines = doc.splitTextToSize(line, contentWidth);  
+      lines.forEach(L => {  
+        y = ensureSpace(y, 18);  
+        doc.text(L, margin, y);  
+        y += 14;  
+      });  
+    });  
+    footer();  
+    ENGINE_STATE.research_nodes.forEach((node, index) => {  
+      doc.addPage();  
+      pageNum++;  
+      let y2 = 70;  
+      const title = sanitizeForPDF(node.title || "Untitled");  
+      const src = sanitizeForPDF(node.sourceName || "Local");  
+      const conf = sanitizeForPDF(node.confidence || "High");  
+      const url = sanitizeForPDF(node.url || "");  
+      doc.setFont("helvetica", "bold");  
+      doc.setFontSize(18);  
+      doc.setTextColor(255, 103, 31);  
+      const tLines = doc.splitTextToSize(`${index + 1}. ${title}`, contentWidth);  
+      doc.text(tLines, margin, y2);  
+      y2 += tLines.length * 18;  
+      doc.setFont("helvetica", "normal");  
+      doc.setFontSize(10);  
+      doc.setTextColor(110);  
+      doc.text(`Source: ${src} • Confidence: ${conf}`, margin, y2);  
+      y2 += 16;  
+      if (url) {  
+        const uLines = doc.splitTextToSize(`URL: ${url}`, contentWidth);  
+        uLines.forEach(L => {  
+          y2 = ensureSpace(y2, 18);  
+          doc.text(L, margin, y2);  
+          y2 += 12;  
+        });  
+        y2 += 6;  
+      }  
+      const takeaways = extractTakeaways(node.summary || "", 4).map(sanitizeForPDF);  
+      doc.setFont("helvetica", "bold");  
+      doc.setFontSize(12);  
+      doc.setTextColor(20);  
+      doc.text("Key takeaways", margin, y2);  
+      y2 += 14;  
+      doc.setFont("helvetica", "normal");  
+      doc.setFontSize(11);  
+      doc.setTextColor(40);  
+      if (takeaways.length) {  
+        takeaways.forEach(tw => {  
+          const lines = doc.splitTextToSize(`• ${tw}`, contentWidth);  
+          lines.forEach(L => {  
+            y2 = ensureSpace(y2, 18);  
+            doc.text(L, margin, y2);  
+            y2 += 14;  
+          });  
+          y2 += 2;  
+        });  
+      } else {  
+        y2 = ensureSpace(y2, 18);  
+        doc.text("• (No takeaways extracted)", margin, y2);  
+        y2 += 14;  
+      }  
+      y2 += 8;  
+      doc.setFont("helvetica", "bold");  
+      doc.setFontSize(12);  
+      doc.setTextColor(20);  
+      doc.text("Summary", margin, y2);  
+      y2 += 14;  
+      doc.setFont("helvetica", "normal");  
+      doc.setFontSize(11);  
+      doc.setTextColor(40);  
+      const summary = sanitizeForPDF(node.summary || "");  
+      const sLines = doc.splitTextToSize(summary || "No summary available.", contentWidth);  
+      sLines.forEach(L => {  
+        y2 = ensureSpace(y2, 18);  
+        doc.text(L, margin, y2);  
+        y2 += 14;  
+      });  
+      footer();  
+    });  
+    if (synthesis && (synthesis.thesis || (synthesis.topTakeaways && synthesis.topTakeaways.length) || synthesis.implications || synthesis.next || synthesis.recommendation || synthesis.contradictions)) {  
+      doc.addPage();  
+      pageNum++;  
+      let y3 = 70;  
+      doc.setFont("helvetica", "bold");  
+      doc.setFontSize(18);  
+      doc.setTextColor(255, 103, 31);  
+      doc.text("Synthesis", margin, y3);  
+      y3 += 22;  
+      doc.setFont("helvetica", "bold");  
+      doc.setFontSize(12);  
+      doc.setTextColor(20);  
+      function block(title, text){  
+        if (!text || !String(text).trim()) return;  
+        y3 = ensureSpace(y3, 40);  
+        doc.text(title, margin, y3);  
+        y3 += 14;  
+        doc.setFont("helvetica", "normal");  
+        doc.setFontSize(11);  
+        doc.setTextColor(40);  
+        const lines = doc.splitTextToSize(sanitizeForPDF(String(text)), contentWidth);  
+        lines.forEach(L => {  
+          y3 = ensureSpace(y3, 18);  
+          doc.text(L, margin, y3);  
+          y3 += 14;  
+        });  
+        y3 += 10;  
+        doc.setFont("helvetica", "bold");  
+        doc.setFontSize(12);  
+        doc.setTextColor(20);  
+      }  
+      block("Working thesis", synthesis.thesis);  
+      if (Array.isArray(synthesis.topTakeaways) && synthesis.topTakeaways.length) {  
+        y3 = ensureSpace(y3, 40);  
+        doc.text("Top takeaways", margin, y3);  
+        y3 += 14;  
+        doc.setFont("helvetica", "normal");  
+        doc.setFontSize(11);  
+        doc.setTextColor(40);  
+        synthesis.topTakeaways.forEach(tw => {  
+          const lines = doc.splitTextToSize(`• ${sanitizeForPDF(tw)}`, contentWidth);  
+          lines.forEach(L => {  
+            y3 = ensureSpace(y3, 18);  
+            doc.text(L, margin, y3);  
+            y3 += 14;  
+          });  
+          y3 += 2;  
+        });  
+        y3 += 10;  
+        doc.setFont("helvetica", "bold");  
+        doc.setFontSize(12);  
+        doc.setTextColor(20);  
+      }  
+      block("Contradictions / open questions", synthesis.contradictions);  
+      block("Decision implications", synthesis.implications);  
+      block("Next research nodes", synthesis.next);  
+      block("Recommendation signals", synthesis.recommendation);  
+      footer();  
+    }  
+    doc.save(`decision-research-${new Date().toISOString().slice(0,10)}.pdf`);  
+    showToast("PDF DOWNLOADED");  
   } catch (e) {
     console.error("PDF generation error:", e);
     showToast("PDF FAILED");
@@ -2125,19 +2049,17 @@ async function generateResearchPDF() {
 }
 
 /* =========================================
-DECISION PRO UI PDF (kept)
+DECISION PRO UI PDF (kept, not changed)
 ========================================= */
 function buildDecisionProModel() {
   const nodes = ENGINE_STATE.research_nodes || [];
   const first = nodes[0];
   const synthesis = ENGINE_STATE.synthesis || {};
-
   const aggregated = [];
   nodes.forEach(n => {
     const tw = extractTakeaways(n.summary || "", 4);
     tw.forEach(line => aggregated.push(line));
   });
-
   const syn = { ...synthesis };
   const context = {
     decision: first?.decisionMeta?.decision || "",
@@ -2146,7 +2068,6 @@ function buildDecisionProModel() {
     success: first?.decisionMeta?.success || "",
     options: first?.decisionMeta?.options || ""
   };
-
   if (!syn.topTakeaways || syn.topTakeaways.length === 0) syn.topTakeaways = aggregated.slice(0, 5);
   if (!syn.thesis || syn.thesis.trim() === '') {
     syn.thesis = `Decision: ${context.decision || 'N/A'}, Time horizon: ${context.time || 'N/A'}, Stake: ${context.stake || 'N/A'}, Success metric: ${context.success || 'N/A'}, Options: ${context.options || 'N/A'}`;
@@ -2157,7 +2078,6 @@ function buildDecisionProModel() {
   if (!syn.contradictions || syn.contradictions.trim() === '') syn.contradictions = 'None specified';
   if (!syn.next || syn.next.trim() === '') syn.next = 'N/A';
   if (!syn.recommendation || syn.recommendation.trim() === '') syn.recommendation = 'No recommendations provided';
-
   return {
     meta: {
       title: (first?.title ? first.title.toUpperCase() : "DECISION BRIEF"),
@@ -2185,7 +2105,6 @@ function renderDecisionProDocHTML(model) {
   const esc = escapeHTML;
   const wm = esc(model.meta?.watermark || "");
   const ctx = model.context || {};
-
   const cover = `
     <div class="proui-page">
       <div class="proui-pillrow">
@@ -2195,40 +2114,36 @@ function renderDecisionProDocHTML(model) {
       </div>
       <h1 class="proui-title">${esc(model.meta.title || "")}</h1>
       <p class="proui-subtitle">${esc(model.meta.subtitle || "")}</p>
-
-      <div class="proui-grid2" style="margin-top:14px;">
-        <div class="proui-card">
-          <div class="proui-h">Decision Context</div>
-          <div class="proui-kv">
-            <div class="proui-k">Decision</div><div class="proui-v">${esc(ctx.decision || "N/A")}</div>
-            <div class="proui-k">Time horizon</div><div class="proui-v">${esc(ctx.time || "N/A")}</div>
-            <div class="proui-k">Stake</div><div class="proui-v">${esc(ctx.stake || "N/A")}</div>
-            <div class="proui-k">Success metric</div><div class="proui-v">${esc(ctx.success || "N/A")}</div>
-            <div class="proui-k">Options</div><div class="proui-v">${esc(ctx.options || "N/A")}</div>
-          </div>
-        </div>
-        <div class="proui-card">
-          <div class="proui-h">Snapshot</div>
-          <div class="proui-kv">
-            <div class="proui-k">Nodes</div><div class="proui-v">${model.nodes.length}</div>
-            <div class="proui-k">Primary source</div><div class="proui-v">${esc(model.nodes[0]?.sourceName || "")}</div>
-            <div class="proui-k">Confidence</div><div class="proui-v">${esc(model.nodes[0]?.confidence || "")}</div>
-          </div>
-        </div>
+      <div class="proui-grid2" style="margin-top:14px;">  
+          <div class="proui-card">  
+            <div class="proui-h">Decision Context</div>  
+            <div class="proui-kv">  
+              <div class="proui-k">Decision</div><div class="proui-v">${esc(ctx.decision || "N/A")}</div>  
+              <div class="proui-k">Time horizon</div><div class="proui-v">${esc(ctx.time || "N/A")}</div>  
+              <div class="proui-k">Stake</div><div class="proui-v">${esc(ctx.stake || "N/A")}</div>  
+              <div class="proui-k">Success metric</div><div class="proui-v">${esc(ctx.success || "N/A")}</div>  
+              <div class="proui-k">Options</div><div class="proui-v">${esc(ctx.options || "N/A")}</div>  
+            </div>  
+          </div>  
+          <div class="proui-card">  
+            <div class="proui-h">Snapshot</div>  
+            <div class="proui-kv">  
+              <div class="proui-k">Nodes</div><div class="proui-v">${model.nodes.length}</div>  
+              <div class="proui-k">Primary source</div><div class="proui-v">${esc(model.nodes[0]?.sourceName || "")}</div>  
+              <div class="proui-k">Confidence</div><div class="proui-v">${esc(model.nodes[0]?.confidence || "")}</div>  
+            </div>  
+          </div>  
+        </div>  
+        <div style="height:16px"></div>  
+        <div class="proui-card">  
+          <div class="proui-h">Index</div>  
+          <ul class="proui-list">  
+            ${model.nodes.map(n => `<li>#${n.idx} — ${esc(n.title)}</li>`).join("")}  
+          </ul>  
+        </div>  
+        <div class="proui-wm">${wm}</div>  
       </div>
-
-      <div style="height:16px"></div>
-      <div class="proui-card">
-        <div class="proui-h">Index</div>
-        <ul class="proui-list">
-          ${model.nodes.map(n => `<li>#${n.idx} — ${esc(n.title)}</li>`).join("")}
-        </ul>
-      </div>
-
-      <div class="proui-wm">${wm}</div>
-    </div>
   `;
-
   const nodePages = model.nodes.map(n => {
     const takeaways = (n.takeaways || []).length
       ? (n.takeaways || []).map(t => `<li>${esc(t)}</li>`).join("")
@@ -2236,103 +2151,90 @@ function renderDecisionProDocHTML(model) {
     const cats = (n.categories || []).length
       ? `<div style="margin-top:10px" class="proui-small"><strong>Categories:</strong> ${esc(n.categories.join(" • "))}</div>`
       : "";
-
-    let summary = sanitizeForPDF(n.summary || "");
-    if (summary.length > 2400) summary = summary.slice(0, 2400);
+    let summary = sanitizeForPDF(n.summary || "");  
+    if (summary.length > 2400) summary = summary.slice(0, 2400);  
     const sents = splitIntoSentences(summary);
     const lead = sents[0] || summary;
     const rest = sents.slice(1);
     const restParas = [];
-    for (let i = 0; i < rest.length; i += 3) restParas.push(rest.slice(i, i+3).join(" "));
-
-    return `
-      <div class="proui-page">
-        <div class="proui-card" style="margin-bottom:16px;">
-          <div class="proui-h">Node ${n.idx}</div>
-          <div class="proui-nodeTitle">${esc(n.title)}</div>
-          <div class="proui-small" style="margin-top:6px;">
-            <strong>Source:</strong> ${esc(n.sourceName)} (${esc(n.confidence)})
-          </div>
-          ${cats}
-        </div>
-
-        <div class="proui-grid2">
-          <div class="proui-card">
-            <div class="proui-h">Key takeaways</div>
-            <ul class="proui-list">${takeaways}</ul>
-          </div>
-          <div class="proui-card">
-            <div class="proui-h">Decision Implications</div>
-            <div class="proui-small">
-              <p style="margin:0 0 8px 0; font-weight:800; color:#e2e8f0;">${esc(n.decisionMeta?.decision || "No decision context provided")}</p>
-              <p style="margin:0 0 8px 0;">Stake: ${esc(n.decisionMeta?.stake || "-")} | Time: ${esc(n.decisionMeta?.time || "-")} | Metric: ${esc(n.decisionMeta?.success || "-")} | Options: ${esc(n.decisionMeta?.options || "-")}</p>
-            </div>
-          </div>
-        </div>
-
-        <div style="height:16px"></div>
-        <div class="proui-card">
-          <div class="proui-h">Summary</div>
-          <div class="proui-small">
-            <p style="margin:0 0 8px 0; font-weight:800; color:#e2e8f0;">${esc(lead)}</p>
-            ${restParas.map(p => `<p style="margin:0 0 8px 0;">${esc(p)}</p>`).join("")}
-          </div>
-        </div>
-
-        <div style="height:16px"></div>
-        <div class="proui-card">
-          <div class="proui-h">Full article</div>
-          <div class="proui-small">${n.url ? esc(n.url) : "No URL available"}</div>
-        </div>
-
-        <div class="proui-wm">${wm}</div>
-      </div>
+    for (let i = 0; i < rest.length; i += 3) restParas.push(rest.slice(i, i+3).join(" "));  
+    return `  
+      <div class="proui-page">  
+        <div class="proui-card" style="margin-bottom:16px;">  
+          <div class="proui-h">Node ${n.idx}</div>  
+          <div class="proui-nodeTitle">${esc(n.title)}</div>  
+          <div class="proui-small" style="margin-top:6px;">  
+            <strong>Source:</strong> ${esc(n.sourceName)} (${esc(n.confidence)})  
+          </div>  
+          ${cats}  
+        </div>  
+        <div class="proui-grid2">  
+          <div class="proui-card">  
+            <div class="proui-h">Key takeaways</div>  
+            <ul class="proui-list">${takeaways}</ul>  
+          </div>  
+          <div class="proui-card">  
+            <div class="proui-h">Decision Implications</div>  
+            <div class="proui-small">  
+              <p style="margin:0 0 8px 0; font-weight:800; color:#e2e8f0;">${esc(n.decisionMeta?.decision || "No decision context provided")}</p>  
+              <p style="margin:0 0 8px 0;">Stake: ${esc(n.decisionMeta?.stake || "-")} | Time: ${esc(n.decisionMeta?.time || "-")} | Metric: ${esc(n.decisionMeta?.success || "-")} | Options: ${esc(n.decisionMeta?.options || "-")}</p>  
+            </div>  
+          </div>  
+        </div>  
+        <div style="height:16px"></div>  
+        <div class="proui-card">  
+          <div class="proui-h">Summary</div>  
+          <div class="proui-small">  
+            <p style="margin:0 0 8px 0; font-weight:800; color:#e2e8f0;">${esc(lead)}</p>  
+            ${restParas.map(p => `<p style="margin:0 0 8px 0;">${esc(p)}</p>`).join("")}  
+          </div>  
+        </div>  
+        <div style="height:16px"></div>  
+        <div class="proui-card">  
+          <div class="proui-h">Full article</div>  
+          <div class="proui-small">${n.url ? esc(n.url) : "No URL available"}</div>  
+        </div>  
+        <div class="proui-wm">${wm}</div>  
+      </div>  
     `;
   }).join("");
-
   const syn = model.synthesis || {};
   const finalPage = `
     <div class="proui-page">
-      <h2 class="proui-title" style="margin-bottom:10px;">Synthesis & Next Steps</h2>
-
-      <div class="proui-card" style="margin-bottom:12px;">
-        <div class="proui-h">Working thesis</div>
-        <div class="proui-small">${esc(syn.thesis || "No thesis provided")}</div>
-      </div>
-
-      <div class="proui-grid2">
-        <div class="proui-card">
-          <div class="proui-h">Top takeaways</div>
-          <ul class="proui-list">${(syn.topTakeaways || []).map(t => `<li>${esc(t)}</li>`).join("")}</ul>
-        </div>
-        <div class="proui-card">
-          <div class="proui-h">Contradictions / Questions</div>
-          <div class="proui-small">${esc(syn.contradictions || "None specified")}</div>
-        </div>
-      </div>
-
-      <div style="height:12px"></div>
-      <div class="proui-grid2">
-        <div class="proui-card">
-          <div class="proui-h">Decision implications</div>
-          <div class="proui-small">${esc(syn.implications || "No implications provided")}</div>
-        </div>
-        <div class="proui-card">
-          <div class="proui-h">Next research nodes</div>
-          <div class="proui-small">${esc(syn.next || "N/A")}</div>
-        </div>
-      </div>
-
-      <div style="height:12px"></div>
-      <div class="proui-card">
-        <div class="proui-h">Recommendation signals</div>
-        <div class="proui-small">${esc(syn.recommendation || "")}</div>
-      </div>
-
-      <div class="proui-wm">${wm}</div>
+    <h2 class="proui-title" style="margin-bottom:10px;">Synthesis & Next Steps</h2>
+    <div class="proui-card" style="margin-bottom:12px;">  
+        <div class="proui-h">Working thesis</div>  
+        <div class="proui-small">${esc(syn.thesis || "No thesis provided")}</div>  
+      </div>  
+      <div class="proui-grid2">  
+        <div class="proui-card">  
+          <div class="proui-h">Top takeaways</div>  
+          <ul class="proui-list">${(syn.topTakeaways || []).map(t => `<li>${esc(t)}</li>`).join("")}</ul>  
+        </div>  
+        <div class="proui-card">  
+          <div class="proui-h">Contradictions / Questions</div>  
+          <div class="proui-small">${esc(syn.contradictions || "None specified")}</div>  
+        </div>  
+      </div>  
+      <div style="height:12px"></div>  
+      <div class="proui-grid2">  
+        <div class="proui-card">  
+          <div class="proui-h">Decision implications</div>  
+          <div class="proui-small">${esc(syn.implications || "No implications provided")}</div>  
+        </div>  
+        <div class="proui-card">  
+          <div class="proui-h">Next research nodes</div>  
+          <div class="proui-small">${esc(syn.next || "N/A")}</div>  
+        </div>  
+      </div>  
+      <div style="height:12px"></div>  
+      <div class="proui-card">  
+        <div class="proui-h">Recommendation signals</div>  
+        <div class="proui-small">${esc(syn.recommendation || "")}</div>  
+      </div>  
+      <div class="proui-wm">${wm}</div>  
     </div>
   `;
-
   return `<div class="proui-doc">${cover}${nodePages}${finalPage}</div>`;
 }
 async function generateDecisionProUIPDF() {
@@ -2376,7 +2278,6 @@ Swipe navigation
 let startY = null;
 let startX = null;
 let isSwiping = false;
-
 function onTouchStart(e){
   if (!e.touches || e.touches.length !== 1) return;
   const target = e.target;
@@ -2458,7 +2359,7 @@ function boot(){
 boot();
 
 /* =========================================
-PATCH STEP 6 — Service Worker Registration
+PATCH: Service Worker Registration
 ========================================= */
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
@@ -2467,6 +2368,37 @@ if ("serviceWorker" in navigator) {
       .catch(err => console.log("SW failed:", err));
   });
 }
+
+/* =========================================
+Cross-Origin Message Listener
+========================================= */
+// Listen for messages from Alchemist quiz (cross-origin)
+window.addEventListener("message", (ev) => {
+  if (ev.origin !== QUIZ_ORIGIN) return;
+  const msg = ev.data || {};
+  if (!msg.type) return;
+  if (msg.type === "ALCHEMIST_READY") {
+    QUIZ_HANDSHAKE_OK = true;
+    if (QUIZ_WIN && !QUIZ_WIN.closed && QUIZ_LAST_PAYLOAD) {
+      QUIZ_WIN.postMessage(QUIZ_LAST_PAYLOAD, QUIZ_ORIGIN);
+      showToast("SESSION INJECTED");
+    }
+    return;
+  }
+  if (msg.type === "ALCHEMIST_RESULTS") {
+    ENGINE_STATE.quizStats = msg.results || null;
+    if (ENGINE_STATE.quizStats) {
+      showToast(`QUIZ: ${ENGINE_STATE.quizStats.accuracy}% • +${ENGINE_STATE.quizStats.xp} XP`);
+      scoreSynthesis();
+      autosaveProjectIfPossible();
+      updateUIPanel();
+    } else {
+      showToast("QUIZ RESULTS EMPTY");
+    }
+    return;
+  }
+});
+
 </script>
 </body>
 </html>

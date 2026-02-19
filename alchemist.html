@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -66,9 +65,7 @@
       flex:1; min-height:0;
     }
 
-    /* =========================
-       CARD LAYOUT (FIX OVERFLOW)
-       ========================= */
+    /* FIX OVERFLOW: card is a flex column with a scrollable question region */
     .card{
       position:absolute;
       width:100%; height:100%;
@@ -78,21 +75,20 @@
       box-shadow:0 20px 60px rgba(0,0,0,0.95);
       will-change: transform;
       transform-style:preserve-3d;
-      overflow:hidden; /* IMPORTANT: nothing can escape deck */
+      overflow:hidden;
       transition: transform 0.18s ease, opacity 0.18s ease;
 
       display:flex;
       flex-direction:column;
       gap:12px;
-      min-height:0; /* IMPORTANT for scroll children */
+      min-height:0;
     }
     .card.locked{opacity:0.18; transform:scale(0.97); filter:grayscale(100%);}
 
-    /* scroll area for question text */
     .card-q{
       flex:1;
-      min-height:0;          /* IMPORTANT */
-      overflow:auto;         /* IMPORTANT: scroll inside card */
+      min-height:0;
+      overflow:auto;
       -webkit-overflow-scrolling:touch;
 
       width:100%;
@@ -105,7 +101,6 @@
       text-align:center;
       color:var(--text-white);
 
-      /* IMPORTANT: prevent long strings from breaking layout */
       overflow-wrap:anywhere;
       word-break:break-word;
       hyphens:auto;
@@ -141,7 +136,7 @@
       grid-template-columns:1fr 1fr;
       gap:10px;
       width:100%;
-      margin-top:auto;  /* pins buttons to bottom */
+      margin-top:auto;
       flex-shrink:0;
     }
     .btn{
@@ -158,7 +153,6 @@
       text-transform:uppercase;
       line-height:1.15;
 
-      /* better long option labels */
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
@@ -168,7 +162,6 @@
     .btn-green{border-color:rgba(46,204,113,.55); color:var(--green);}
     .btn-red{border-color:rgba(255,68,68,.55); color:var(--red);}
 
-    /* Swipe overlay label now shows option text */
     .swipe-label{
       position:absolute; inset:0;
       display:flex; align-items:center; justify-content:center;
@@ -182,7 +175,6 @@
       border-radius:14px; color:var(--text-white); border:1px solid #444;
       transform:scale(0.92);
 
-      /* prevent overflow */
       overflow-wrap:anywhere;
       word-break:break-word;
       hyphens:auto;
@@ -224,14 +216,6 @@
   </div>
 
 <script>
-/* =========================================
-   ALCHEMIST | KINETIC
-   FIXES:
-   1) text never escapes card (flex + scroll + wrap)
-   2) show option text (not UP/DOWN/LEFT/RIGHT) on swipe + buttons
-========================================= */
-
-/* ---------- injection loader ---------- */
 const ALCHEMIST_LS_KEY = "ALCHEMIST_INJECTED_DATA";
 let INJECTED_DATA = [];
 try {
@@ -240,34 +224,31 @@ try {
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed) && parsed.length) INJECTED_DATA = parsed;
   }
-} catch(e) {
-  INJECTED_DATA = [];
+} catch(e) { INJECTED_DATA = []; }
+
+if (!INJECTED_DATA.length) {
+  INJECTED_DATA = [{
+    Question_ID:"DEMO_001",
+    Set_Code:"DEMO",
+    Domain:"Decision OS",
+    Subdomain:"Onboarding",
+    Difficulty:"1",
+    Question_Text:"Which node matches this snippet?\n\n“Focus on what you can control.”",
+    Correct_Answer:"Dichotomy of control",
+    Distractor_1:"Stoicism",
+    Distractor_2:"CBT",
+    Distractor_3:"Marcus Aurelius",
+    Correct_Direction:"RIGHT",
+    Explanation_Short:"The control split points to that node.",
+    Explanation_Long:"Demo appears only when no injected JSON exists."
+  }];
 }
 
-/* demo when no injection */
-if (!INJECTED_DATA.length) {
-  INJECTED_DATA = [
-    {
-      Question_ID: "DEMO_001",
-      Set_Code: "DEMO",
-      Domain: "Decision OS",
-      Subdomain: "Onboarding",
-      Difficulty: "1",
-      Question_Text: "Which option matches this snippet?\n\n“Stoicism focuses on what you can control.”",
-      Correct_Answer: "Dichotomy of control",
-      Distractor_1: "Stoicism",
-      Distractor_2: "Cognitive behavioral therapy",
-      Correct_Direction: "RIGHT",
-      Explanation_Short: "The snippet points to the control split.",
-      Explanation_Long: "Demo appears only when no injected JSON exists."
-    }
-  ];
-}
+const ALL_DIRS = ["UP","RIGHT","LEFT","DOWN"];
 
 function normDir(d){
   const x = String(d || "").trim().toUpperCase();
-  if (x === "UP" || x === "DOWN" || x === "LEFT" || x === "RIGHT") return x;
-  return "UP";
+  return (ALL_DIRS.includes(x)) ? x : "UP";
 }
 function escapeHTML(str){
   return String(str ?? "")
@@ -278,47 +259,41 @@ function escapeHTML(str){
     .replaceAll("'","&#039;");
 }
 
-/* Build per-question option map:
-   - correctDir => Correct_Answer
-   - remaining dirs => distractors (then "SKIP")
+/* 4-choice mapping:
+   correctDir => Correct_Answer
+   other dirs => Distractor_1/2/3 (order)
 */
-const ALL_DIRS = ["UP","RIGHT","LEFT","DOWN"];
 function buildOptionMap(q){
   const correctDir = normDir(q.Correct_Direction);
   const correctAns = (q.Correct_Answer || "").trim() || "—";
   const d1 = (q.Distractor_1 || "").trim();
   const d2 = (q.Distractor_2 || "").trim();
-  const distractors = [d1, d2].filter(Boolean);
+  const d3 = (q.Distractor_3 || "").trim();
+  const distractors = [d1, d2, d3].filter(Boolean);
 
   const map = {};
   map[correctDir] = correctAns;
 
   const remaining = ALL_DIRS.filter(d => d !== correctDir);
-  // fill remaining with distractors first, then SKIP
   for (let i = 0; i < remaining.length; i++){
-    map[remaining[i]] = distractors[i] || "SKIP";
+    map[remaining[i]] = distractors[i] || "—";
   }
   return map;
 }
 
-const RAW_DATA = INJECTED_DATA.map((q, idx) => {
-  const optionMap = buildOptionMap(q);
-  return {
-    id: q.Question_ID || String(idx + 1).padStart(3, "0"),
-    set: q.Set_Code || "SET",
-    domain: q.Domain || "DOMAIN",
-    subdomain: q.Subdomain || "",
-    difficulty: Number(q.Difficulty || 3),
-    text: q.Question_Text || "Untitled question",
-    correct: (q.Correct_Answer || "").trim(),
-    correctDir: normDir(q.Correct_Direction),
-    optionMap,
-    expShort: q.Explanation_Short || "",
-    expLong: q.Explanation_Long || ""
-  };
-});
+const RAW_DATA = INJECTED_DATA.map((q, idx) => ({
+  id: q.Question_ID || String(idx + 1).padStart(3, "0"),
+  set: q.Set_Code || "SET",
+  domain: q.Domain || "DOMAIN",
+  subdomain: q.Subdomain || "",
+  difficulty: Number(q.Difficulty || 3),
+  text: q.Question_Text || "Untitled question",
+  correctDir: normDir(q.Correct_Direction),
+  optionMap: buildOptionMap(q),
+  expShort: q.Explanation_Short || "",
+  expLong: q.Explanation_Long || ""
+}));
 
-/* ---------- UI + engine ---------- */
 const els = {
   stack: document.getElementById("stack"),
   progress: document.getElementById("progress-bar"),
@@ -333,7 +308,7 @@ const els = {
 let idx = 0;
 let xp = 0;
 let correctCount = 0;
-let answered = []; // {id, chosenDir, chosenText, isCorrect, correctDir, correctText, ...}
+let answered = [];
 
 function setLog(primary, secondary, tertiary, mode="active"){
   if (els.log1) els.log1.textContent = primary || "> ...";
@@ -352,69 +327,22 @@ function updateHeader(){
   if (els.id) els.id.textContent = `VIA.STACK • ${idx}/${total}`;
 }
 
-function makeCard(q, zIndex){
-  const card = document.createElement("div");
-  card.className = "card";
-  card.style.zIndex = String(zIndex);
-
-  const label = document.createElement("div");
-  label.className = "swipe-label";
-  label.innerHTML = ""; // filled during swipe
-
-  const qWrap = document.createElement("div");
-  qWrap.className = "card-q";
-  qWrap.innerHTML = escapeHTML(q.text);
-
-  const chipRow = document.createElement("div");
-  chipRow.className = "chiprow";
-  chipRow.innerHTML = `
-    <span class="chip">${escapeHTML(q.domain)}</span>
-    ${q.subdomain ? `<span class="chip">${escapeHTML(q.subdomain)}</span>` : ""}
-    <span class="chip">D:${escapeHTML(String(q.difficulty))}</span>
-    <span class="chip">#${escapeHTML(q.id)}</span>
-  `;
-
-  const hint = document.createElement("div");
-  hint.className = "small";
-  hint.innerHTML = `
-    <div class="muted">Swipe or tap an option</div>
-    <div style="margin-top:6px; font-size:.68rem; color:#5e5e5e;">(UP / RIGHT / LEFT / DOWN are just directions)</div>
-  `;
-
-  // buttons now show OPTION TEXT
-  const btnRow = document.createElement("div");
-  btnRow.className = "btnrow";
-
-  const btnDefs = [
-    { dir:"UP",    cls:"btn btn-gold" },
-    { dir:"RIGHT", cls:"btn btn-green" },
-    { dir:"LEFT",  cls:"btn btn-red" },
-    { dir:"DOWN",  cls:"btn" }
-  ];
-
-  btnDefs.forEach(def => {
-    const b = document.createElement("button");
-    b.className = def.cls;
-    b.setAttribute("data-dir", def.dir);
-    b.title = def.dir;
-    b.textContent = q.optionMap[def.dir] || "—";
-    b.addEventListener("click", () => answer(def.dir));
-    btnRow.appendChild(b);
-  });
-
-  card.appendChild(label);
-  card.appendChild(qWrap);
-  card.appendChild(chipRow);
-  card.appendChild(hint);
-  card.appendChild(btnRow);
-
-  attachSwipe(card, label, q);
-  return card;
+function dominantDir(dx, dy, threshold=40){
+  const ax = Math.abs(dx), ay = Math.abs(dy);
+  if (ax < threshold && ay < threshold) return null;
+  if (ax > ay) return dx > 0 ? "RIGHT" : "LEFT";
+  return dy > 0 ? "DOWN" : "UP";
+}
+function swipeTransform(dir){
+  switch(dir){
+    case "UP": return "translate(0px,-720px) rotate(-8deg)";
+    case "DOWN": return "translate(0px,720px) rotate(8deg)";
+    case "LEFT": return "translate(-720px,0px) rotate(-10deg)";
+    case "RIGHT": return "translate(720px,0px) rotate(10deg)";
+    default: return "translate(0px,-720px)";
+  }
 }
 
-/* Swipe handler:
-   overlay label shows option text for that direction
-*/
 function attachSwipe(card, label, q){
   let sx=0, sy=0, dragging=false;
 
@@ -431,7 +359,6 @@ function attachSwipe(card, label, q){
     const dx = e.touches[0].clientX - sx;
     const dy = e.touches[0].clientY - sy;
 
-    // visual tilt
     card.style.transform = `translate(${dx*0.9}px, ${dy*0.9}px) rotateY(${dx/18}deg) rotateX(${-dy/22}deg)`;
 
     const dir = dominantDir(dx, dy);
@@ -463,11 +390,59 @@ function attachSwipe(card, label, q){
   }, {passive:true});
 }
 
-function dominantDir(dx, dy, threshold=40){
-  const ax = Math.abs(dx), ay = Math.abs(dy);
-  if (ax < threshold && ay < threshold) return null;
-  if (ax > ay) return dx > 0 ? "RIGHT" : "LEFT";
-  return dy > 0 ? "DOWN" : "UP";
+function makeCard(q, zIndex){
+  const card = document.createElement("div");
+  card.className = "card";
+  card.style.zIndex = String(zIndex);
+
+  const label = document.createElement("div");
+  label.className = "swipe-label";
+
+  const qWrap = document.createElement("div");
+  qWrap.className = "card-q";
+  qWrap.innerHTML = escapeHTML(q.text);
+
+  const chipRow = document.createElement("div");
+  chipRow.className = "chiprow";
+  chipRow.innerHTML = `
+    <span class="chip">${escapeHTML(q.domain)}</span>
+    ${q.subdomain ? `<span class="chip">${escapeHTML(q.subdomain)}</span>` : ""}
+    <span class="chip">D:${escapeHTML(String(q.difficulty))}</span>
+    <span class="chip">#${escapeHTML(q.id)}</span>
+  `;
+
+  const hint = document.createElement("div");
+  hint.className = "small";
+  hint.innerHTML = `<div class="muted">Swipe or tap an option</div>`;
+
+  const btnRow = document.createElement("div");
+  btnRow.className = "btnrow";
+
+  const btnDefs = [
+    { dir:"UP",    cls:"btn btn-gold" },
+    { dir:"RIGHT", cls:"btn btn-green" },
+    { dir:"LEFT",  cls:"btn btn-red" },
+    { dir:"DOWN",  cls:"btn" }
+  ];
+
+  btnDefs.forEach(def => {
+    const b = document.createElement("button");
+    b.className = def.cls;
+    b.setAttribute("data-dir", def.dir);
+    b.title = def.dir;
+    b.textContent = q.optionMap[def.dir] || "—";
+    b.addEventListener("click", () => answer(def.dir));
+    btnRow.appendChild(b);
+  });
+
+  card.appendChild(label);
+  card.appendChild(qWrap);
+  card.appendChild(chipRow);
+  card.appendChild(hint);
+  card.appendChild(btnRow);
+
+  attachSwipe(card, label, q);
+  return card;
 }
 
 function render(){
@@ -490,7 +465,8 @@ function render(){
   const c1 = makeCard(curr, 2);
   els.stack.appendChild(c1);
 
-  setLog("> SYSTEM LIVE", `> QUESTIONS: ${RAW_DATA.length}`, `> ACTIVE: #${curr.id} (${curr.correctDir})`, "primary");
+  const correctText = curr.optionMap[curr.correctDir] || curr.correctDir;
+  setLog("> SYSTEM LIVE", `> QUESTIONS: ${RAW_DATA.length}`, `> ACTIVE: #${curr.id} (TARGET: ${correctText})`, "primary");
 }
 
 function answer(chosenDir){
@@ -498,8 +474,8 @@ function answer(chosenDir){
 
   const q = RAW_DATA[idx];
   const correct = chosenDir === q.correctDir;
-  const chosenText = (q.optionMap && q.optionMap[chosenDir]) ? q.optionMap[chosenDir] : chosenDir;
-  const correctText = (q.optionMap && q.optionMap[q.correctDir]) ? q.optionMap[q.correctDir] : q.correct;
+  const chosenText = q.optionMap[chosenDir] || "—";
+  const correctText = q.optionMap[q.correctDir] || "—";
 
   answered.push({
     id: q.id,
@@ -526,7 +502,6 @@ function answer(chosenDir){
   }
   updateHeader();
 
-  // animate swipe away
   const topCard = els.stack.querySelector(".card:not(.locked)");
   if (topCard) {
     topCard.style.transition = "transform 0.22s ease, opacity 0.22s ease";
@@ -534,20 +509,7 @@ function answer(chosenDir){
     topCard.style.opacity = "0";
   }
 
-  setTimeout(() => {
-    idx += 1;
-    render();
-  }, 230);
-}
-
-function swipeTransform(dir){
-  switch(dir){
-    case "UP": return "translate(0px,-720px) rotate(-8deg)";
-    case "DOWN": return "translate(0px,720px) rotate(8deg)";
-    case "LEFT": return "translate(-720px,0px) rotate(-10deg)";
-    case "RIGHT": return "translate(720px,0px) rotate(10deg)";
-    default: return "translate(0px,-720px)";
-  }
+  setTimeout(() => { idx += 1; render(); }, 230);
 }
 
 function renderResults(){
@@ -575,19 +537,16 @@ function renderResults(){
         <button class="btn btn-green" id="btn-retry">RETRY</button>
         <button class="btn" id="btn-close">CLOSE</button>
       </div>
-
       <div style="height:14px"></div>
       <div class="small muted">This quiz was launched from Decision OS injection.</div>
     </div>
   `;
+
   els.stack.innerHTML = "";
   els.stack.appendChild(card);
 
   document.getElementById("btn-pdf").onclick = exportPDF;
-  document.getElementById("btn-retry").onclick = () => {
-    idx = 0; xp = 0; correctCount = 0; answered = [];
-    render();
-  };
+  document.getElementById("btn-retry").onclick = () => { idx = 0; xp = 0; correctCount = 0; answered = []; render(); };
   document.getElementById("btn-close").onclick = () => window.close();
 }
 
@@ -640,11 +599,9 @@ async function exportPDF(){
 
 function truncate(s, n){
   const t = String(s||"").replace(/\s+/g," ").trim();
-  if (t.length <= n) return t;
-  return t.slice(0, n-1) + "…";
+  return (t.length <= n) ? t : (t.slice(0, n-1) + "…");
 }
 
-/* ---------- boot ---------- */
 (function boot(){
   els.gyro.classList.add("active");
   setLog("> SYSTEM BOOT", `> INJECTED: ${INJECTED_DATA.length} ITEMS`, "> STARTING QUIZ...", "active");

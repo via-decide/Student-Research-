@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="manifest" href="manifest.json">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Alchemist | Kinetic</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#000000; --card:#0a0a0a; --border:#222; --gold:#ffd600; --green:#2ecc71; --red:#ff4444;
+      --text-white:#ffffff; --text-grey:#888888;
+      --font-serif:'Crimson Text',serif; --font-sans:'Inter',sans-serif; --font-code:'JetBrains Mono',monospace;
+    }
+    *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+    body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font-family:var(--font-sans); overflow:hidden; display:flex; flex-direction:column;}
+
+    #header{width:90%; margin:25px auto 0; z-index:100; flex-shrink:0;}
+    .header-meta{display:flex; justify-content:space-between; font-family:var(--font-code); font-size:0.75rem; color:#666; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:15px;}
+    .progress-track{width:100%; height:3px; background:#222; border-radius:2px;}
+    #progress-bar{height:100%; background:var(--gold); width:0%; transition:width 0.4s ease; border-radius:2px;}
+
+    #kinetic-logger{width:90%; margin:15px auto 5px; font-family:var(--font-code); font-size:0.8rem; color:#444; line-height:1.4; text-transform:uppercase; min-height:60px; display:flex; flex-direction:column; justify-content:flex-end;}
+    .log-line{opacity:0.5; transition:opacity 0.2s;}
+    .log-line.active{color:var(--green); opacity:1; font-weight:700;}
+    .log-line.primary{color:var(--gold); opacity:1; font-weight:700;}
+    .log-line.danger{color:var(--red); opacity:1; font-weight:700;}
+
+    #gyro-status{
+      position:absolute; top:20px; left:50%; transform:translateX(-50%);
+      font-family:var(--font-code); font-size:0.6rem; color:#444;
+      border:1px solid #333; padding:4px 8px; border-radius:4px;
+      opacity:0; transition:opacity 0.5s; pointer-events:none;
+    }
+    #gyro-status.active{opacity:1; color:var(--gold); border-color:var(--gold);}
+
+    #stack{
+      position:relative; width:90%; max-width:420px;
+      height:calc(100vh - 220px - env(safe-area-inset-bottom));
+      margin:10px auto 20px; perspective:1500px; display:flex; align-items:center; justify-content:center;
+    }
+    .card{
+      position:absolute; width:100%; height:100%; background:var(--card);
+      border-radius:14px; border:1px solid var(--border); padding:35px;
+      display:flex; flex-direction:column; justify-content:center; align-items:center;
+      box-shadow:0 20px 60px rgba(0,0,0,0.95);
+      will-change: transform;
+      transform-style:preserve-3d; overflow:hidden;
+      transition: transform 0.18s ease, opacity 0.18s ease;
+    }
+    .card.locked{opacity:0.18; transform:scale(0.97); filter:grayscale(100%);}
+
+    .card-q{
+      font-family:var(--font-serif); font-size:clamp(1.35rem, 5vw, 1.9rem);
+      line-height:1.4; font-weight:600; text-align:center; color:var(--text-white);
+      width:100%; max-height:100%; overflow-y:auto; word-wrap:break-word; padding:0 5px;
+      display:flex; flex-direction:column; justify-content:center;
+    }
+    .card-q::-webkit-scrollbar{width:0px;}
+    .card-q sub{font-size:0.7em; vertical-align:-0.3em;}
+    .card-q sup{font-size:0.7em; vertical-align:0.5em;}
+
+    .swipe-label{
+      position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+      background:rgba(0,0,0,0.86);
+      font-family:var(--font-sans); font-weight:900;
+      font-size:1.6rem; text-transform:uppercase; letter-spacing:1px;
+      text-align:center; padding:40px; opacity:0; pointer-events:none;
+      transition:opacity 0.1s ease, transform 0.1s ease;
+      border-radius:14px; color:var(--text-white); border:1px solid #444;
+      transform:scale(0.92);
+    }
+    .swipe-label.show{opacity:1; transform:scale(1);}
+    .chiprow{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:14px;}
+    .chip{
+      font-family:var(--font-code); font-size:0.65rem; color:#bbb;
+      border:1px solid #2a2a2a; background:#080808; padding:6px 10px; border-radius:999px;
+      text-transform:uppercase; letter-spacing:0.08em;
+    }
+    .btnrow{display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; margin-top:16px;}
+    .btn{
+      width:100%; border-radius:12px; border:1px solid #2a2a2a; background:#0b0b0b; color:#fff;
+      padding:12px 12px; font-weight:800; font-family:var(--font-code); letter-spacing:0.08em;
+      cursor:pointer; text-transform:uppercase;
+    }
+    .btn:active{transform:scale(0.99); opacity:0.95;}
+    .btn-gold{border-color:rgba(255,214,0,.55); color:var(--gold);}
+    .btn-green{border-color:rgba(46,204,113,.55); color:var(--green);}
+    .btn-red{border-color:rgba(255,68,68,.55); color:var(--red);}
+
+    .small{font-family:var(--font-code); font-size:0.72rem; color:#666; letter-spacing:0.08em; text-transform:uppercase; text-align:center; line-height:1.5;}
+    .muted{color:#777;}
+  </style>
+</head>
+<body>
+
+<div id="gyro-status">HYBRID SENSORS READY</div>
+
+<div id="header">
+  <div class="header-meta">
+    <span id="id-ui">VIA.STACK</span>
+    <span id="xp-ui">0 XP</span>
+  </div>
+  <div class="progress-track"><div id="progress-bar"></div></div>
+</div>
+
+<div id="kinetic-logger">
+  <div class="log-line" id="log-1">> SYSTEM BOOT</div>
+  <div class="log-line" id="log-2">> INJECTING DATA...</div>
+  <div class="log-line active" id="log-3">> ...</div>
+</div>
+
+<div id="stack">
+  <div class="card">
+    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666;">LOADING KINETIC CORE...</div>
+  </div>
+</div>
+
+<script>
+/* =========================================
+   ALCHEMIST | KINETIC (Decision OS injection)
+   Path A: alchemist.html in same folder as main index.html
+   ========================================= */
+
+/* ---------- injection loader ---------- */
+const ALCHEMIST_LS_KEY = "ALCHEMIST_INJECTED_DATA"; // must match Decision OS
+let INJECTED_DATA = [];
+try {
+  const raw = localStorage.getItem(ALCHEMIST_LS_KEY);
+  if (raw) {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length) INJECTED_DATA = parsed;
+  }
+} catch(e) {
+  INJECTED_DATA = [];
+}
+
+/* If opened directly with no injected payload, show a tiny demo set */
+if (!INJECTED_DATA.length) {
+  INJECTED_DATA = [
+    {
+      Question_ID: "DEMO_001",
+      Set_Code: "DEMO",
+      Domain: "Decision OS",
+      Subdomain: "Onboarding",
+      Difficulty: "1",
+      Question_Text: "Swipe UP for correct. This is a demo question.",
+      Correct_Answer: "UP is correct",
+      Distractor_1: "LEFT is correct",
+      Distractor_2: "DOWN is correct",
+      Correct_Direction: "UP",
+      Explanation_Short: "Demo explanation.",
+      Explanation_Long: "This demo appears only when no injected JSON exists."
+    }
+  ];
+}
+
+/* ---------- minimal mapping (your schema already fits) ---------- */
+function normDir(d){
+  const x = String(d || "").trim().toUpperCase();
+  if (x === "UP" || x === "DOWN" || x === "LEFT" || x === "RIGHT") return x;
+  return "UP";
+}
+
+const RAW_DATA = INJECTED_DATA.map((q, idx) => {
+  // Pick two wrong answers (distractors). If missing, fabricate.
+  const wrongs = [q.Distractor_1, q.Distractor_2].filter(Boolean);
+  while (wrongs.length < 2) wrongs.push("—");
+  return {
+    id: q.Question_ID || String(idx + 1).padStart(3, "0"),
+    set: q.Set_Code || "SET",
+    domain: q.Domain || "DOMAIN",
+    subdomain: q.Subdomain || "",
+    difficulty: Number(q.Difficulty || 3),
+    text: q.Question_Text || "Untitled question",
+    correct: q.Correct_Answer || "",
+    wrong1: wrongs[0],
+    wrong2: wrongs[1],
+    correctDir: normDir(q.Correct_Direction),
+    expShort: q.Explanation_Short || "",
+    expLong: q.Explanation_Long || ""
+  };
+});
+
+/* ---------- UI + engine ---------- */
+const els = {
+  stack: document.getElementById("stack"),
+  progress: document.getElementById("progress-bar"),
+  xp: document.getElementById("xp-ui"),
+  id: document.getElementById("id-ui"),
+  log1: document.getElementById("log-1"),
+  log2: document.getElementById("log-2"),
+  log3: document.getElementById("log-3"),
+  gyro: document.getElementById("gyro-status"),
+};
+
+let idx = 0;
+let xp = 0;
+let correctCount = 0;
+let answered = []; // {id, chosenDir, isCorrect, correctDir}
+
+/* logger helpers */
+function setLog(primary, secondary, tertiary, mode="active"){
+  if (els.log1) els.log1.textContent = primary || "> ...";
+  if (els.log2) els.log2.textContent = secondary || "> ...";
+  if (els.log3) els.log3.textContent = tertiary || "> ...";
+  els.log1.className = "log-line";
+  els.log2.className = "log-line";
+  els.log3.className = "log-line " + (mode === "danger" ? "danger" : (mode === "primary" ? "primary" : "active"));
+}
+
+function updateHeader(){
+  const total = RAW_DATA.length;
+  const pct = total ? Math.round((idx / total) * 100) : 0;
+  if (els.progress) els.progress.style.width = pct + "%";
+  if (els.xp) els.xp.textContent = xp + " XP";
+  if (els.id) els.id.textContent = `VIA.STACK • ${idx}/${total}`;
+}
+
+function makeCard(q, zIndex){
+  const card = document.createElement("div");
+  card.className = "card";
+  card.style.zIndex = String(zIndex);
+
+  const label = document.createElement("div");
+  label.className = "swipe-label";
+  label.textContent = "";
+
+  const qWrap = document.createElement("div");
+  qWrap.className = "card-q";
+  qWrap.innerHTML = escapeHTML(q.text);
+
+  const chipRow = document.createElement("div");
+  chipRow.className = "chiprow";
+  chipRow.innerHTML = `
+    <span class="chip">${escapeHTML(q.domain)}</span>
+    ${q.subdomain ? `<span class="chip">${escapeHTML(q.subdomain)}</span>` : ""}
+    <span class="chip">D:${String(q.difficulty)}</span>
+    <span class="chip">#${escapeHTML(q.id)}</span>
+  `;
+
+  const hint = document.createElement("div");
+  hint.className = "small";
+  hint.style.marginTop = "14px";
+  hint.innerHTML = `
+    <div class="muted">Swipe to answer</div>
+    <div>UP • DOWN • LEFT • RIGHT</div>
+  `;
+
+  const btnRow = document.createElement("div");
+  btnRow.className = "btnrow";
+  btnRow.innerHTML = `
+    <button class="btn btn-gold" data-dir="UP">UP</button>
+    <button class="btn btn-green" data-dir="RIGHT">RIGHT</button>
+    <button class="btn btn-red" data-dir="LEFT">LEFT</button>
+    <button class="btn" data-dir="DOWN">DOWN</button>
+  `;
+
+  btnRow.querySelectorAll("button").forEach(b => {
+    b.addEventListener("click", () => answer(b.getAttribute("data-dir")));
+  });
+
+  card.appendChild(label);
+  card.appendChild(qWrap);
+  card.appendChild(chipRow);
+  card.appendChild(hint);
+  card.appendChild(btnRow);
+
+  // swipe
+  attachSwipe(card, label);
+
+  return card;
+}
+
+function escapeHTML(str){
+  return String(str ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+function attachSwipe(card, label){
+  let sx=0, sy=0, dragging=false;
+
+  card.addEventListener("touchstart", (e) => {
+    if (!e.touches || e.touches.length !== 1) return;
+    dragging = true;
+    sx = e.touches[0].clientX;
+    sy = e.touches[0].clientY;
+    card.style.transition = "none";
+  }, {passive:true});
+
+  card.addEventListener("touchmove", (e) => {
+    if (!dragging || !e.touches || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - sx;
+    const dy = e.touches[0].clientY - sy;
+
+    // visual tilt
+    card.style.transform = `translate(${dx*0.9}px, ${dy*0.9}px) rotateY(${dx/18}deg) rotateX(${-dy/22}deg)`;
+    const dir = dominantDir(dx, dy);
+    if (dir) {
+      label.textContent = dir;
+      label.classList.add("show");
+    } else {
+      label.classList.remove("show");
+    }
+  }, {passive:true});
+
+  card.addEventListener("touchend", (e) => {
+    if (!dragging) return;
+    dragging = false;
+
+    const t = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0] : null;
+    const dx = t ? (t.clientX - sx) : 0;
+    const dy = t ? (t.clientY - sy) : 0;
+
+    const dir = dominantDir(dx, dy, 65);
+    if (!dir) {
+      card.style.transition = "transform 0.18s ease";
+      card.style.transform = `translate(0px,0px) rotate(0deg)`;
+      label.classList.remove("show");
+      return;
+    }
+    answer(dir);
+  }, {passive:true});
+}
+
+function dominantDir(dx, dy, threshold=40){
+  const ax = Math.abs(dx), ay = Math.abs(dy);
+  if (ax < threshold && ay < threshold) return null;
+  if (ax > ay) return dx > 0 ? "RIGHT" : "LEFT";
+  return dy > 0 ? "DOWN" : "UP";
+}
+
+function render(){
+  els.stack.innerHTML = "";
+  updateHeader();
+
+  if (idx >= RAW_DATA.length) {
+    renderResults();
+    return;
+  }
+
+  // render 2 cards (current + next) for depth illusion
+  const curr = RAW_DATA[idx];
+  const next = RAW_DATA[idx + 1];
+
+  if (next) {
+    const c2 = makeCard(next, 1);
+    c2.classList.add("locked");
+    els.stack.appendChild(c2);
+  }
+  const c1 = makeCard(curr, 2);
+  els.stack.appendChild(c1);
+
+  setLog("> SYSTEM LIVE", `> QUESTIONS: ${RAW_DATA.length}`, `> ACTIVE: #${curr.id} (${curr.correctDir})`, "primary");
+}
+
+function answer(chosenDir){
+  if (idx >= RAW_DATA.length) return;
+
+  const q = RAW_DATA[idx];
+  const correct = chosenDir === q.correctDir;
+
+  answered.push({
+    id: q.id,
+    chosenDir,
+    isCorrect: correct,
+    correctDir: q.correctDir,
+    domain: q.domain,
+    subdomain: q.subdomain,
+    difficulty: q.difficulty,
+    text: q.text,
+    correctAnswer: q.correct,
+    expShort: q.expShort,
+    expLong: q.expLong,
+  });
+
+  if (correct) {
+    xp += 10;
+    correctCount += 1;
+    setLog("> SIGNAL ACQUIRED", `> +10 XP`, `> CORRECT (${chosenDir})`, "primary");
+  } else {
+    xp += 2;
+    setLog("> COLLISION", `> +2 XP`, `> WRONG (${chosenDir}) • EXPECTED (${q.correctDir})`, "danger");
+  }
+  updateHeader();
+
+  // animate swipe away
+  const topCard = els.stack.querySelector(".card:not(.locked)");
+  if (topCard) {
+    topCard.style.transition = "transform 0.22s ease, opacity 0.22s ease";
+    const off = swipeTransform(chosenDir);
+    topCard.style.transform = off;
+    topCard.style.opacity = "0";
+  }
+
+  setTimeout(() => {
+    idx += 1;
+    render();
+  }, 230);
+}
+
+function swipeTransform(dir){
+  switch(dir){
+    case "UP": return "translate(0px,-720px) rotate(-8deg)";
+    case "DOWN": return "translate(0px,720px) rotate(8deg)";
+    case "LEFT": return "translate(-720px,0px) rotate(-10deg)";
+    case "RIGHT": return "translate(720px,0px) rotate(10deg)";
+    default: return "translate(0px,-720px)";
+  }
+}
+
+function renderResults(){
+  const total = RAW_DATA.length;
+  const pct = total ? Math.round((correctCount/total)*100) : 0;
+  if (els.progress) els.progress.style.width = "100%";
+
+  setLog("> RUN COMPLETE", `> SCORE: ${correctCount}/${total} (${pct}%)`, `> EXPORT AVAILABLE`, "primary");
+
+  const card = document.createElement("div");
+  card.className = "card";
+  card.style.zIndex = "5";
+
+  card.innerHTML = `
+    <div class="card-q" style="font-family:var(--font-code); font-size:1.05rem; color:#ddd;">
+      QUIZ COMPLETE
+      <div style="height:12px"></div>
+      <div style="font-family:var(--font-serif); font-size:1.8rem; font-weight:700; color:var(--gold);">${correctCount}/${total}</div>
+      <div style="height:8px"></div>
+      <div class="small">ACCURACY: ${pct}% • XP: ${xp}</div>
+      <div style="height:18px"></div>
+
+      <div class="btnrow" style="grid-template-columns:1fr; gap:10px;">
+        <button class="btn btn-gold" id="btn-pdf">EXPORT PDF</button>
+        <button class="btn btn-green" id="btn-retry">RETRY</button>
+        <button class="btn" id="btn-close">CLOSE</button>
+      </div>
+
+      <div style="height:14px"></div>
+      <div class="small muted">This quiz was launched from Decision OS injection.</div>
+    </div>
+  `;
+  els.stack.innerHTML = "";
+  els.stack.appendChild(card);
+
+  document.getElementById("btn-pdf").onclick = exportPDF;
+  document.getElementById("btn-retry").onclick = () => {
+    idx = 0; xp = 0; correctCount = 0; answered = [];
+    render();
+  };
+  document.getElementById("btn-close").onclick = () => window.close();
+}
+
+async function exportPDF(){
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit:"pt", format:"a4" });
+    const w = doc.internal.pageSize.getWidth();
+    const h = doc.internal.pageSize.getHeight();
+    const margin = 40;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("Alchemist Quiz Report", margin, 60);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.text(`Total: ${RAW_DATA.length} | Correct: ${correctCount} | XP: ${xp}`, margin, 86);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, margin, 104);
+
+    let y = 140;
+    const lineH = 14;
+
+    answered.forEach((a, i) => {
+      if (y > h - 120) { doc.addPage(); y = 60; }
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text(`${i+1}. ${truncate(a.text, 90)}`, margin, y); y += lineH;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.text(`Chosen: ${a.chosenDir} | Expected: ${a.correctDir} | ${a.isCorrect ? "CORRECT" : "WRONG"}`, margin, y); y += lineH;
+
+      if (a.expShort) {
+        const lines = doc.splitTextToSize(`Note: ${a.expShort}`, w - margin*2);
+        lines.forEach(L => { doc.text(L, margin, y); y += lineH; });
+      }
+      y += 10;
+    });
+
+    doc.save(`alchemist-quiz-${new Date().toISOString().slice(0,10)}.pdf`);
+    setLog("> EXPORT COMPLETE", "> PDF SAVED", "> READY", "primary");
+  }catch(e){
+    console.error(e);
+    setLog("> EXPORT FAILED", "> PDF ERROR", "> CHECK CONSOLE", "danger");
+  }
+}
+
+function truncate(s, n){
+  const t = String(s||"").replace(/\s+/g," ").trim();
+  if (t.length <= n) return t;
+  return t.slice(0, n-1) + "…";
+}
+
+/* ---------- boot ---------- */
+(function boot(){
+  els.gyro.classList.add("active");
+  setLog("> SYSTEM BOOT", `> INJECTED: ${INJECTED_DATA.length} ITEMS`, "> STARTING QUIZ...", "active");
+  updateHeader();
+  render();
+})();
+</script>
+
+</body>
+</html>
